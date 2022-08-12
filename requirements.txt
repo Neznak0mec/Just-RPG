@@ -1,3 +1,4 @@
-discord==2.0.0a
+
+
 pymongo==4.0.2
 python-dotenv
