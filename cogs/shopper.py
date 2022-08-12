@@ -119,8 +119,10 @@ class Shopper(commands.Cog):
         item = None
 
         if amount < 1:
-            await interaction.response.send_message(embed=checker.err_embed(f"Вы не можете купить меньше 1 предмета")
-                                                    ,ephemeral=True)
+            await interaction.response.send_message(
+                embed=checker.err_embed(f"Вы не можете купить меньше 1 предмета"),
+                ephemeral=True
+            )
             return
 
         for i in items:

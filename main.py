@@ -1,13 +1,12 @@
 import datetime
 import discord
-import pymongo
 from discord import app_commands
-from discord.ext import commands
-from modules import checker
 import traceback
 from dotenv import load_dotenv
 import os
 from modules.client import CustomClient
+from modules import checker
+from settings import DEFEND_SCROLL_ID
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 if os.path.exists(dotenv_path):
@@ -49,10 +48,10 @@ async def aboba(interaction: discord.Interaction, member: discord.Member):
 
     def_ = users_db.find_one({"_id": member.id})['inventory'] or None
     if def_ is not None:
-        if '7f12ec8e-71b9-4c11-8d2c-8c26fcf0db6c' in def_:
+        if DEFEND_SCROLL_ID in def_:
             await interaction.response.send_message(embed=checker.emp_embed(f'У {member.mention} был свиток "Защиты"'
                                                                             f', оба свитка сгорели'))
-            def_.remove('7f12ec8e-71b9-4c11-8d2c-8c26fcf0db6c')
+            def_.remove(DEFEND_SCROLL_ID)
             atk.remove('a3840ab0-9e1e-49d7-bb03-19b49d3e0cd9')
             users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": atk}})
             users_db.update_one({"_id": member.id}, {"$set": {"inventory": def_}})

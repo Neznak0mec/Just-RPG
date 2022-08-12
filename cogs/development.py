@@ -204,10 +204,9 @@ class Devel(commands.Cog):
             await interaction.response.send_message("предмета не существует")
             return
 
-        post = \
-            {
-                item_id: chance
-            }
+        post = {
+            item_id: chance
+        }
 
         info_db.update_one({"_id": "locations"}, {"$set": {"loks." + str(counter) + ".drop."+item_id: chance}})
 

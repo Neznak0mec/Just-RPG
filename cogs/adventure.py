@@ -60,14 +60,14 @@ class Adventure(commands.Cog):
     @app_commands.command(name="adventure", description="Отправится в небольшой поход")
     async def dungeon(self, interaction: discord.Interaction):
         await checker.check(interaction)
-        view = discord.ui.View(timeout=180).add_item(Select_dangeon(interaction))
+        view = discord.ui.View(timeout=180).add_item(SelectDungeon(interaction))
         emb = discord.Embed(title=f'Выберите куда хочешь отправиться',
                             description=f'Поход - самый эффективный способ прокачки для новичков.')
         # await interaction.response.send_message(embed=emb, view=view, ephemeral=True)
         await interaction.response.send_message(embed=emb, view=view)
 
 
-class Select_dangeon(discord.ui.Select):
+class SelectDungeon(discord.ui.Select):
     def __init__(self, ctx: discord.Interaction):
         options = []
 
@@ -81,7 +81,6 @@ class Select_dangeon(discord.ui.Select):
 
         super().__init__(placeholder='Выбери локацию для битвы с монстром', min_values=1, max_values=1,
                          options=options)
-
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
@@ -111,7 +110,7 @@ class Select_dangeon(discord.ui.Select):
 
         emb = game_emb(self.stats, mob)
 
-        view = Dangeon(self.author, self.stats, mob, dan['drop'], interaction)
+        view = DungeonView(self.author, self.stats, mob, dan['drop'], interaction)
 
         await interaction.response.edit_message(embed=emb, view=view)
 
@@ -129,20 +128,24 @@ def def_calc(oba):
 
 
 def game_emb(stats, mob, log=None):
-    emb = discord.Embed(title=f"Битва с {mob['name']} - {mob['lvl']}", description="\u200b")
-    emb.add_field(name=f"Вы - {stats['lvl']}", value=f"hp - {hp_calc(stats)}\n"
-                                                     f"броня - {def_calc(stats)}\n"
-                                                     f"урон - {stats['damage']}")
+    embed = discord.Embed(title=f"Битва с {mob['name']} - {mob['lvl']}", description="\u200b")
+    embed.add_field(
+        name=f"Вы - {stats['lvl']}",
+        value=f"hp - {hp_calc(stats)}\nброня - {def_calc(stats)}\nурон - {stats['damage']}"
+    )
 
-    emb.add_field(name=f"{mob['name']} - {mob['lvl']}", value=f"hp - {hp_calc(mob)}\n"
-                                                              f"урон - {mob['damage']}", inline=False)
+    embed.add_field(
+        name=f"{mob['name']} - {mob['lvl']}",
+        value=f"hp - {hp_calc(mob)}\nурон - {mob['damage']}",
+        inline=False
+    )
 
     if log is not None:
-        emb.add_field(name="Лог", value=log, inline=False)
+        embed.add_field(name="Лог", value=log, inline=False)
 
-    emb.set_thumbnail(url=mob['url'])
+    embed.set_thumbnail(url=mob['url'])
 
-    return emb
+    return embed
 
 
 def game_loose(mob, log, author):
@@ -198,7 +201,7 @@ def game_run(mob, log, author):
     return emb
 
 
-class Dangeon(discord.ui.View):
+class DungeonView(discord.ui.View):
     def __init__(self, author, stats, mob, drop, iteration):
         super().__init__()
         self.drop = drop
@@ -358,31 +361,28 @@ class Dangeon(discord.ui.View):
             self.interaction = await interaction.response.edit_message(embed=game_run(self.mob, log, self.author),
                                                                        view=self)
             return
+        if random.randint(1, 3) == 1:
+            dmg_bonus = + dmg_randomer(self.mob['damage'])
+            self.fight(self.mob['damage'] * 2 + dmg_bonus, self.stats)
 
+            log = f"Пока вы пытались убежать противник ударил вас в спину, нанеся {self.mob['damage'] * 2 + dmg_bonus:.2f} урона\n"
 
         else:
-            if random.randint(1, 3) == 1:
-                dmg_bonus = + dmg_randomer(self.mob['damage'])
-                self.fight(self.mob['damage'] * 2 + dmg_bonus, self.stats)
+            dmg_bonus = + dmg_randomer(self.mob['damage'])
+            self.fight(self.mob['damage'] + dmg_bonus, self.stats)
+            log = f"Вам не удалось сбежать, враг нанёс вам {self.mob['damage'] + dmg_bonus:.2f} урона\n"
 
-                log = f"Пока вы пытались убежать противник ударил вас в спину, нанеся {self.mob['damage'] * 2 + dmg_bonus:.2f} урона\n"
+        if self.stats['heal'] <= 0:
+            log += "Вы погибли\n"
 
-            else:
-                dmg_bonus = + dmg_randomer(self.mob['damage'])
-                self.fight(self.mob['damage'] + dmg_bonus, self.stats)
-                log = f"Вам не удалось сбежать, враг нанёс вам {self.mob['damage'] + dmg_bonus:.2f} урона\n"
+            await self.stop()
+            await interaction.response.edit_message(embed=game_loose(self.mob, log, self.author),
+                                                    view=self)
+            return
 
-            if self.stats['heal'] <= 0:
-                log += "Вы погибли\n"
-
-                await self.stop()
-                await interaction.response.edit_message(embed=game_loose(self.mob, log, self.author),
-                                                        view=self)
-
-                return
-
-            self.interaction = self.interaction = await interaction.response.edit_message(
-                embed=game_emb(self.stats, self.mob, log))
+        self.interaction = await interaction.response.edit_message(
+            embed=game_emb(self.stats, self.mob, log)
+        )
 
     async def on_timeout(self) -> None:
         if self.game_end:
@@ -419,9 +419,7 @@ class Dangeon(discord.ui.View):
         self.attack.disabled = True
         self.run.disabled = True
         self.hp.disabled = True
-
         self.game_end = True
-
         return
 
     async def on_error(self, interaction, error: Exception, item) -> None:
