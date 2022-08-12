@@ -5,16 +5,20 @@ from discord import app_commands
 from discord.ext import commands
 from modules import checker
 import traceback
+from dotenv import load_dotenv
 import os
 
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
 
-TOKEN = ""  # тест
+TOKEN = os.environ.get("TOKEN")
+MONGO_KEY = os.environ.get("MONGO_KEY")
+
 intents = discord.Intents.all()
 
 bot = commands.Bot(command_prefix="%%%", intents=intents)
-
-connection = ""
-cluster = pymongo.MongoClient(connection)
+cluster = pymongo.MongoClient(MONGO_KEY)
 db = cluster["MMORPG"]
 
 users_db = db["users"]
