@@ -3,8 +3,7 @@ import pymongo
 from discord import app_commands
 from discord.ext import commands
 import random
-
-import checker
+from modules import checker
 from profiler import lvl_up
 
 connection = ""
@@ -432,4 +431,5 @@ class Dangeon(discord.ui.View):
             raise error
 
 
-
+def setup(client):
+    client.add_cog(Adventure(client))

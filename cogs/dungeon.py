@@ -3,9 +3,6 @@ import pymongo
 from discord import app_commands
 from discord.ext import commands, tasks
 import random
-
-import checker
-from profiler import lvl_up
 from adventure import dmg_randomer, stats_calc, game_emb
 
 
@@ -238,3 +235,7 @@ class Dungeon(commands.Cog):
         us_stats = stats_calc(interaction.user)
         view = Dun(interaction.user, interaction, enemy, us_stats)
         await interaction.response.send_message(embed=game_emb(us_stats, enemy[0]), view=view)
+
+
+def setup(client):
+    client.add_cog(Dungeon(client))

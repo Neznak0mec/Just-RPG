@@ -4,7 +4,7 @@ from discord.ext import commands
 
 import random
 import pymongo
-import checker
+from modules import checker
 
 connection = ""
 cluster = pymongo.MongoClient(connection)
@@ -664,3 +664,7 @@ class Profiler(commands.Cog):
             emb.set_thumbnail(url=item['image'])
 
         await interaction.response.send_message(embed=emb)
+
+
+def setup(client):
+    client.add_cog(Profiler(client))

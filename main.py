@@ -1,17 +1,12 @@
 import datetime
-
 import discord
 import pymongo
 from discord import app_commands
 from discord.ext import commands
+from modules import checker
+import traceback
+import os
 
-import adventure
-import checker
-import profiler
-import development
-import settings
-import shopper
-import dungeon
 
 TOKEN = ""  # тест
 intents = discord.Intents.all()
@@ -27,7 +22,6 @@ servers_db = db["servers"]
 info_db = db["info"]
 
 
-@app_commands.checks.has_permissions(administrator=True)
 @app_commands.checks.cooldown(1, 180, key=lambda i: i.user.id)
 @app_commands.checks.bot_has_permissions(moderate_members=True)
 @bot.tree.command(name="проклятие", description="Мьютит участника на 10 минут")
@@ -130,16 +124,27 @@ async def on_message(ctx):
     await bot.process_commands(ctx)
 
 
+def load_cogs(debug=False):
+    """Загрузка когов"""
+    for filename in os.listdir("./cogs"):
+        if not filename.endswith(".py"):
+            continue
+        try:
+            bot.load_extension(f"cogs.{filename[:-3]}")
+        except Exception as error:
+            print(f'{filename[:-3]}: крашнут')
+            if debug:
+                print(traceback.format_exc())
+        else:
+            print(f"{filename[:-3]}: включён")
+    print("=" * 20)
+
+
 @bot.event
 async def on_ready():
-    # await bot.add_cog(adventure.Adventure(bot))
-    # await bot.add_cog(profiler.Profiler(bot))
-    # await bot.add_cog(shopper.Shopper(bot))
-    # await bot.add_cog(development.Devel(bot, users_db, servers_db))
-    # await bot.add_cog(settings.Settings(bot))
-    await bot.add_cog(dungeon.Dungeon(bot))
+    load_cogs(debug=True)
     await bot.tree.sync()
-    print("провер очка")
+    print(f"Бот онлайн\nИмя: {bot.user.name}\nid: {bot.user.id}\n")
 
 
 if __name__ == "__main__":

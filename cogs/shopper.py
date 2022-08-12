@@ -4,7 +4,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 import random
-import checker
+from modules import checker
 import os
 from dotenv import load_dotenv
 
@@ -165,4 +165,8 @@ class Shopper(commands.Cog):
         await interaction.response.send_message(embed=checker.emp_embed(f"✅ Вы успешно преобрели \"{item['name']}\" "
                                                                         f"в количестве {amount}шт. потратив"
                                                 f"{amount*item['price']}<:silver:997889161484828826>"), ephemeral=True)
+
+
+def setup(client):
+    client.add_cog(Shopper(client))
 

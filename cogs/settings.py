@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 from discord import SelectOption
 
-import checker
+from modules import checker
 import pymongo
 
 connection = ""
@@ -51,3 +51,7 @@ class Settings(commands.Cog):
         emb.set_footer(text=aba.name + "#" + aba.discriminator + " ©", icon_url=aba.avatar.url)
 
         await interaction.response.send_message(embed=emb)
+
+
+def setup(client):
+    client.add_cog(Settings(client))

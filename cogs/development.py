@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-import random
 import pymongo
 from discord import app_commands
 import uuid
@@ -227,3 +226,7 @@ class Devel(commands.Cog):
         item_db.update_one({"_id": id}, {"$set": {"image": image}})
 
         await interaction.response.send_message(f"Изображение добавлено для {id}")
+
+
+def setup(client):
+    client.add_cog(Devel(client))

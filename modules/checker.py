@@ -69,3 +69,4 @@ def err_embed(text: str):
 
 def emp_embed(text: str):
     return discord.Embed(description=text)
+
