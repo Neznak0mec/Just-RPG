@@ -1,33 +1,23 @@
-import discord
-import pymongo
-from discord import app_commands
-from discord.ext import commands, tasks
 import random
-from adventure import dmg_randomer, stats_calc, game_emb
-import asyncio
 
+import discord
+from discord import app_commands
+from discord.ext import commands
 
-connection = ""
-cluster = pymongo.MongoClient(connection)
-
-db = cluster["MMORPG"]
-
-users_db = db["users"]
-servers_db = db["servers"]
-info_db = db["info"]
-item_db = db["items"]
+from cogs.adventure import dmg_randomer, stats_calc, game_emb
 
 
 class Dun(discord.ui.View):
-    def __init__(self, author, interaction, enemy, us_stats):
+    def __init__(self, bot, author, interaction, enemy, us_stats):
         super().__init__()
+        self.bot = bot
         self.stats = us_stats
         self.author = author
         self.interaction = interaction
         self.enemies = enemy
         self.curr = 0
         self.game_end = False
-        self.inventory = users_db.find_one({"id": self.author.id})['inventory']
+        self.inventory = self.bot.users_db.find_one({"id": self.author.id})['inventory']
         self.upd_select()
 
     def upd_select(self):
@@ -82,14 +72,12 @@ class Dun(discord.ui.View):
             self.fight(self.stats['damage'] + dmg_bonus, self.enemies[self.curr])
             log += f"Вы нанесли {self.stats['damage'] + dmg_bonus:.2f} урона\n"
 
-
-        dead = [False,False,False]
+        dead = [False, False, False]
         for i in self.enemies:
             if i['heal'] <= 0:
                 if i['heal'] < 0:
                     i['heal'] = 0
                 dead[self.enemies.index(i)] = True
-
 
         if any(dead):
             for i in self.enemies:
@@ -100,7 +88,7 @@ class Dun(discord.ui.View):
 
                     if random.randint(1, 100) != 1 + self.stats['speed']:
                         self.fight(i['damage'] + dmg_bonus, self.stats)
-                        log += f"Монстр {self.enemies.index(i)+1} - {i['name']} нанес вам  {i['damage'] + dmg_bonus:.2f} урона\n"
+                        log += f"Монстр {self.enemies.index(i) + 1} - {i['name']} нанес вам  {i['damage'] + dmg_bonus:.2f} урона\n"
 
                     else:
                         log += "Вы укланились от атаки\n"
@@ -112,8 +100,9 @@ class Dun(discord.ui.View):
 
                         await self.stop()
 
-                        await interaction.response.edit_message(embed=game_loose(self.enemies[self.curr], log, self.author),
-                                                        view=self)
+                        await interaction.response.edit_message(
+                            embed=game_loose(self.enemies[self.curr], log, self.author),
+                            view=self)
 
                         return
 
@@ -147,10 +136,10 @@ class Dun(discord.ui.View):
         self.hp.disabled = True
         self.select.disabled = False
 
-        loss_cash = int(users_db.find_one({"_id": self.author.id})['cash'] / 100 * 20)
-        loss_exp = int(users_db.find_one({"_id": self.author.id})['exp'] / 100 * 20)
+        loss_cash = int(self.bot.users_db.find_one({"_id": self.author.id})['cash'] / 100 * 20)
+        loss_exp = int(self.bot.users_db.find_one({"_id": self.author.id})['exp'] / 100 * 20)
 
-        users_db.update_one({"_id": self.author.id}, {"$inc": {"cash": -loss_cash, "exp": -loss_exp}})
+        self.bot.users_db.update_one({"_id": self.author.id}, {"$inc": {"cash": -loss_cash, "exp": -loss_exp}})
 
         if self.interaction is None:
             return
@@ -233,10 +222,11 @@ class Dungeon(commands.Cog):
         }
 
         enemy = [mob, mob2, mob3]
-        us_stats = stats_calc(interaction.user)
-        view = Dun(interaction.user, interaction, enemy, us_stats)
+        us_stats = stats_calc(self.bot, interaction.user)
+        view = Dun(self.bot, interaction.user, interaction, enemy, us_stats)
         await interaction.response.send_message(embed=game_emb(us_stats, enemy[0]), view=view)
 
 
-def setup(client):
-    client.add_cog(Dungeon(client))
+async def setup(client):
+    pass
+    # await client.add_cog(Dungeon(client))

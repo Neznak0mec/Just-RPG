@@ -1,26 +1,16 @@
+import random
+
 import discord
 from discord import app_commands
 from discord.ext import commands
 
-import random
-import pymongo
 from modules import checker
 
-connection = ""
-cluster = pymongo.MongoClient(connection)
-# todo: под замену
-db = cluster["MMORPG"]
 
-users_db = db["users"]
-servers_db = db["servers"]
-info_db = db["info"]
-item_db = db["items"]
-
-
-def lvl_up(user):
-    us = users_db.find_one({"_id": user.id})
+def lvl_up(bot, user):
+    us = bot.users_db.find_one({"_id": user.id})
     if us['exp_to_lvl'] <= us['exp']:
-        users_db.update_one({"_id": user.id}, {"$set": {"exp": 0},
+        bot.users_db.update_one({"_id": user.id}, {"$set": {"exp": 0},
                                                "$inc": {"exp_to_lvl": us['exp_to_lvl'] / 5, "lvl": 1,
                                                         "skill_points": 3}})
         return True
@@ -55,7 +45,7 @@ class Up_Skills(discord.ui.View):
 
     def upd(self):
 
-        self.stats = users_db.find_one({"_id": self.author.id})
+        self.stats = self.bot.users_db.find_one({"_id": self.author.id})
 
         self.heal.label = f"{self.stats['heal']} - хп"
         self.armor.label = f"{self.stats['defence']} - броня"
@@ -116,48 +106,48 @@ class Up_Skills(discord.ui.View):
 
     @discord.ui.button(label="", style=discord.ButtonStyle.blurple, row=0, emoji='<:armor:997889166673186987> ')
     async def armor(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.stats = users_db.find_one({"_id": self.author.id})
+        self.stats = self.bot.users_db.find_one({"_id": self.author.id})
         if self.stats['skill_points'] > 0:
-            users_db.update_many({"_id": self.author.id}, {"$inc": {"defence": 1, "skill_points": -1}})
+            self.bot.users_db.update_many({"_id": self.author.id}, {"$inc": {"defence": 1, "skill_points": -1}})
         self.upd()
         await interaction.response.edit_message(view=self)
 
     @discord.ui.button(label="", style=discord.ButtonStyle.blurple, row=1, emoji='<:strength:997889205684420718>')
     async def dmg(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.stats = users_db.find_one({"_id": self.author.id})
+        self.stats = self.bot.users_db.find_one({"_id": self.author.id})
         if self.stats['skill_points'] > 0:
-            users_db.update_many({"_id": self.author.id}, {"$inc": {"damage": 1, "skill_points": -1}})
+            self.bot.users_db.update_many({"_id": self.author.id}, {"$inc": {"damage": 1, "skill_points": -1}})
         self.upd()
         await interaction.response.edit_message(view=self)
 
     @discord.ui.button(label="", style=discord.ButtonStyle.blurple, row=1, emoji='<:luck:997889165221957642>')
     async def luck(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.stats = users_db.find_one({"_id": self.author.id})
+        self.stats = self.bot.users_db.find_one({"_id": self.author.id})
         if self.stats['skill_points'] > 0:
-            users_db.update_many({"_id": self.author.id}, {"$inc": {"luck": 1, "skill_points": -1}})
+            self.bot.users_db.update_many({"_id": self.author.id}, {"$inc": {"luck": 1, "skill_points": -1}})
         self.upd()
         await interaction.response.edit_message(view=self)
 
     @discord.ui.button(label="", style=discord.ButtonStyle.blurple, row=2, emoji='<:dexterity:997889168216694854>')
     async def speed(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.stats = users_db.find_one({"_id": self.author.id})
+        self.stats = self.bot.users_db.find_one({"_id": self.author.id})
         if self.stats['skill_points'] > 0:
-            users_db.update_many({"_id": self.author.id}, {"$inc": {"speed": 1, "skill_points": -1}})
+            self.bot.users_db.update_many({"_id": self.author.id}, {"$inc": {"speed": 1, "skill_points": -1}})
         self.upd()
         await interaction.response.edit_message(view=self)
 
     @discord.ui.button(label="", style=discord.ButtonStyle.blurple, row=2, emoji='<:crit:997889163552628757>')
     async def krit(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.stats = users_db.find_one({"_id": self.author.id})
+        self.stats = self.bot.users_db.find_one({"_id": self.author.id})
         if self.stats['skill_points'] > 0:
-            users_db.update_many({"_id": self.author.id}, {"$inc": {"krit": 1, "skill_points": -1}})
+            self.bot.users_db.update_many({"_id": self.author.id}, {"$inc": {"krit": 1, "skill_points": -1}})
         self.upd()
         await interaction.response.edit_message(view=self)
 
     @discord.ui.button(label="Профиль", style=discord.ButtonStyle.blurple, row=3,
                        emoji='<:profile:1004832756364234762>')
     async def profile(self, interaction: discord.Interaction, button: discord.ui.Button):
-        us = users_db.find_one({"_id": interaction.user.id})
+        us = self.bot.users_db.find_one({"_id": interaction.user.id})
 
         stats = {'heal': str(us['heal']),
                  'damage': str(us['damage']),
@@ -179,7 +169,7 @@ class Up_Skills(discord.ui.View):
             if sel is None:
                 continue
 
-            item = item_db.find_one({"_id": sel})
+            item = self.bot.items_db.find_one({"_id": sel})
             for f in item['give_stats'].keys():
                 plus_stats[f] += item['give_stats'][f]
 
@@ -190,8 +180,7 @@ class Up_Skills(discord.ui.View):
         emb = discord.Embed(title=f"Профиль {interaction.user.name}", description="")
         emb.add_field(name="Уровень", value=us['lvl'], inline=False)
         emb.add_field(name="Опыт", value=str(round(us['exp'])) + '\\' + str(round(us['exp_to_lvl'])), inline=True)
-        emb.add_field(name="Балланс", value=f"<:gold:997889159790346332> : {round(us['cash'] / 100)} | "
-                                            f"<:silver:997889161484828826> : {round(us['cash'] % 100)}", inline=True)
+        emb.add_field(name="Балланс", value=f"<:silver:997889161484828826> : {us['cash']}", inline=True)
         emb.add_field(name="Очки навыков", value=f"{stats['skill_points']}", inline=True)
         emb.add_field(name="Статы", value=f"<:health:997889169567260714> : {stats['heal']} | "
                                           f"<:strength:997889205684420718> : {stats['damage']} | "
@@ -237,7 +226,7 @@ class Inventory(discord.ui.View):
         self.right.disabled = False
         self.central.disabled = False
 
-        us = users_db.find_one({"_id": self.member.id})
+        us = self.bot.users_db.find_one({"_id": self.member.id})
 
         stats = {'heal': str(us['heal']),
                  'damage': str(us['damage']),
@@ -259,7 +248,7 @@ class Inventory(discord.ui.View):
             if sel is None:
                 continue
 
-            item = item_db.find_one({"_id": sel})
+            item = self.bot.items_db.find_one({"_id": sel})
             for f in item['give_stats'].keys():
                 plus_stats[f] += item['give_stats'][f]
 
@@ -270,8 +259,7 @@ class Inventory(discord.ui.View):
         emb = discord.Embed(title=f"Профиль {self.member.name}", description="")
         emb.add_field(name="Уровень", value=us['lvl'], inline=False)
         emb.add_field(name="Опыт", value=str(round(us['exp'])) + '\\' + str(round(us['exp_to_lvl'])), inline=True)
-        emb.add_field(name="Балланс", value=f"<:gold:997889159790346332> : {round(us['cash'] / 100)} | "
-                                            f"<:silver:997889161484828826> : {round(us['cash'] % 100)}", inline=True)
+        emb.add_field(name="Балланс", value=f"<:silver:997889161484828826> : {us['cash']}", inline=True)
         emb.add_field(name="Очки навыков", value=f"{stats['skill_points']}", inline=True)
         emb.add_field(name="Статы", value=f"<:health:997889169567260714> : {stats['heal']} | "
                                           f"<:strength:997889205684420718> : {stats['damage']} | "
@@ -291,44 +279,44 @@ class Inventory(discord.ui.View):
         self.left.disabled = False
         self.right.disabled = False
 
-        us = users_db.find_one({"_id": self.member.id})
+        us = self.bot.users_db.find_one({"_id": self.member.id})
 
         emb = discord.Embed(title=f"Экипировка {self.member.name}", description="")
 
         if us['equipment']['helem'] is None:
             emb.add_field(name="Шлем", value="Не надето", inline=True)
         else:
-            item = item_db.find_one({"_id": us['equipment']['helem']})
+            item = self.bot.items_db.find_one({"_id": us['equipment']['helem']})
             emb.add_field(name=f"Шлем - {item['name']}", value=stats_get(item['give_stats']), inline=True)
 
         if us['equipment']['armor'] is None:
             emb.add_field(name="Нагрудник", value="Не надето", inline=True)
         else:
-            item = item_db.find_one({"_id": us['equipment']['armor']})
+            item = self.bot.items_db.find_one({"_id": us['equipment']['armor']})
             emb.add_field(name=f"Нагрудник - {item['name']}", value=stats_get(item['give_stats']), inline=True)
 
         if us['equipment']['pants'] is None:
             emb.add_field(name="Штаны", value="Не надето", inline=True)
         else:
-            item = item_db.find_one({"_id": us['equipment']['pants']})
+            item = self.bot.items_db.find_one({"_id": us['equipment']['pants']})
             emb.add_field(name=f"Штаны - {item['name']}", value=stats_get(item['give_stats']), inline=True)
 
         if us['equipment']['shoes'] is None:
             emb.add_field(name="Ботинки", value="Не надето", inline=True)
         else:
-            item = item_db.find_one({"_id": us['equipment']['shoes']})
+            item = self.bot.items_db.find_one({"_id": us['equipment']['shoes']})
             emb.add_field(name=f"Ботинки - {item['name']}", value=stats_get(item['give_stats']), inline=True)
 
         if us['equipment']['gloves'] is None:
             emb.add_field(name="Перчатки", value="Не надето", inline=True)
         else:
-            item = item_db.find_one({"_id": us['equipment']['gloves']})
+            item = self.bot.items_db.find_one({"_id": us['equipment']['gloves']})
             emb.add_field(name=f"Перчатки - {item['name']}", value=stats_get(item['give_stats']), inline=True)
 
         if us['equipment']['weapon'] is None:
             emb.add_field(name="Оружие", value="Не надето", inline=True)
         else:
-            item = item_db.find_one({"_id": us['equipment']['weapon']})
+            item = self.bot.items_db.find_one({"_id": us['equipment']['weapon']})
             emb.add_field(name=f"Оружие - {item['name']}", value=stats_get(item['give_stats']), inline=True)
 
         await interaction.response.edit_message(embed=emb, view=self)
@@ -337,11 +325,11 @@ class Inventory(discord.ui.View):
                        emoji='<:inventory:1004832752878768128>')
     async def right(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.interaction = interaction
-        await checker.check(interaction)
+        await checker.check(self.bot,interaction)
         self.central.disabled = False
         self.left.disabled = False
         self.right.disabled = True
-        us = users_db.find_one({"_id": self.member.id})
+        us = self.bot.users_db.find_one({"_id": self.member.id})
         emb = discord.Embed(title=f'Инвентарь {self.member.name}')
 
         items = {}
@@ -357,7 +345,7 @@ class Inventory(discord.ui.View):
         counter = 1
 
         for i in items.keys():
-            item = item_db.find_one({"_id": i})
+            item = self.bot.items_db.find_one({"_id": i})
             emb.add_field(name=f"id: {counter}|{item['lvl']}lvl - {item['name']} x {items[i]}шт",
                           value=item['description'],
                           inline=False)
@@ -395,11 +383,11 @@ class Profiler(commands.Cog):
     @app_commands.command(name="profile", description="посмотреть профиль")
     @app_commands.describe(member="пользователь профиль которого вы хотите посмотреть")
     async def profile(self, interaction: discord.Interaction, member: discord.Member = None):
-        await checker.check(interaction)
+        await checker.check(self.bot, interaction)
         if member is None:
             member = interaction.user
 
-        us = users_db.find_one({"_id": member.id}) or None
+        us = self.bot.users_db.find_one({"_id": member.id}) or None
         if us is None:
             await interaction.response.send_message(embed=checker.err_embed(
                 f"Пользователь {member.name} ещё не пользовался ботом, у его нет "
@@ -426,7 +414,7 @@ class Profiler(commands.Cog):
             if sel is None:
                 continue
 
-            item = item_db.find_one({"_id": sel})
+            item = self.bot.items_db.find_one({"_id": sel})
             for f in item['give_stats'].keys():
                 plus_stats[f] += item['give_stats'][f]
 
@@ -437,8 +425,7 @@ class Profiler(commands.Cog):
         emb = discord.Embed(title=f"Профиль {member.name}", description="")
         emb.add_field(name="Уровень", value=us['lvl'], inline=False)
         emb.add_field(name="Опыт", value=str(round(us['exp'])) + '\\' + str(round(us['exp_to_lvl'])), inline=True)
-        emb.add_field(name="Балланс", value=f"<:gold:997889159790346332> : {round(us['cash'] / 100)} | "
-                                            f"<:silver:997889161484828826> : {round(us['cash'] % 100)}", inline=True)
+        emb.add_field(name="Балланс", value=f"<:silver:997889161484828826> : {us['cash']}", inline=True)
         emb.add_field(name="Очки навыков", value=f"{stats['skill_points']}", inline=True)
         emb.add_field(name="Статы", value=f"<:health:997889169567260714> : {stats['heal']} | "
                                           f"<:strength:997889205684420718> : {stats['damage']} | "
@@ -453,8 +440,8 @@ class Profiler(commands.Cog):
     @app_commands.command(name="equip", description="одеть вещь")
     @app_commands.describe(id="id предмета в вашем инвентаре")
     async def equip(self, interaction: discord.Interaction, id: int):
-        await checker.check(interaction)
-        us = users_db.find_one({"_id": interaction.user.id})
+        await checker.check(self.bot, interaction)
+        us = self.bot.users_db.find_one({"_id": interaction.user.id})
         items = {}
         for i in us['inventory']:
             if i in items:
@@ -470,7 +457,7 @@ class Profiler(commands.Cog):
         counter = 1
         for i in items.keys():
             if counter == id:
-                item = item_db.find_one({"_id": i})
+                item = self.bot.items_db.find_one({"_id": i})
                 if item['type'] == 'scroll' or item['type'] == 'potion' or item['type'] == 'extra':
                     await interaction.response.send_message(
                         embed=checker.err_embed(f"Вы не можете экипировать эту вещь")
@@ -478,20 +465,20 @@ class Profiler(commands.Cog):
                     return
                 else:
                     if us['equipment'][item['type']] is None:
-                        users_db.update_one({"_id": interaction.user.id}, {"$set": {"equipment." + item['type']: i}})
-                        item = item_db.find_one({"_id": i})
+                        self.bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"equipment." + item['type']: i}})
+                        item = self.bot.items_db.find_one({"_id": i})
                         us['inventory'].remove(i)
-                        users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": us['inventory']}})
+                        self.bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": us['inventory']}})
                         await interaction.response.send_message(embed=checker.emp_embed(f"Вы одели {item['name']}"))
                         return
                     else:
-                        unek = users_db.find_one({"_id": interaction.user.id})['equipment'][item['type']]
-                        info = item_db.find_one({"_id": unek})
+                        unek = self.bot.users_db.find_one({"_id": interaction.user.id})['equipment'][item['type']]
+                        info = self.bot.items_db.find_one({"_id": unek})
 
-                        users_db.update_one({"_id": interaction.user.id}, {"$set": {"equipment." + item['type']: i}})
-                        us['inventory'].remove(i)
+                        self.bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"equipment." + item['type']: i}})
+                        us['inventory'].remove(i).append(unek)
 
-                        users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": us['inventory']}})
+                        self.bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": us['inventory']}})
                         await interaction.response.send_message(embed=checker.emp_embed(f"Вы сняли {info['name']} "
                                                                                         f"и одели {item['name']}"))
 
@@ -508,24 +495,24 @@ class Profiler(commands.Cog):
                                 app_commands.Choice(name="Оружие", value="weapon")])
     @app_commands.describe(type="слот вещи, которую вы хотите снять")
     async def unequip(self, interaction: discord.Interaction, type: str):
-        await checker.check(interaction)
-        us = users_db.find_one({"_id": interaction.user.id})
+        await checker.check(self.bot, interaction)
+        us = self.bot.users_db.find_one({"_id": interaction.user.id})
         if us['equipment'][type] is None:
             await interaction.response.send_message(embed=checker.err_embed(
                 f"В этом слоте ничего нет"), ephemeral=True)
             return
-        item = item_db.find_one({"_id": us['equipment'][type]})
-        users_db.update_one({"_id": interaction.user.id}, {"$set": {"equipment." + type: None}})
+        item = self.bot.items_db.find_one({"_id": us['equipment'][type]})
+        self.bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"equipment." + type: None}})
         us['inventory'].append(item['_id'])
-        users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": us['inventory']}})
+        self.bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": us['inventory']}})
         await interaction.response.send_message(embed=checker.emp_embed(
             f"Вы сняли `{item['name']}` и положили в инвентарь"))
 
     @app_commands.command(name="sell", description="Продать вещь за 20% от цены")
     @app_commands.describe(id="id предмета в вашем инвентаре")
     async def sell(self, interaction: discord.Interaction, id: int):
-        await checker.check(interaction)
-        us = users_db.find_one({"_id": interaction.user.id})
+        await checker.check(self.bot, interaction)
+        us = self.bot.users_db.find_one({"_id": interaction.user.id})
         items = {}
         for i in us['inventory']:
             if i in items:
@@ -541,11 +528,11 @@ class Profiler(commands.Cog):
         counter = 1
         for i in items.keys():
             if counter == id:
-                item = item_db.find_one({"_id": i})
+                item = self.bot.items_db.find_one({"_id": i})
                 us['inventory'].remove(i)
 
-                users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": us['inventory']}})
-                users_db.update_one({"_id": interaction.user.id}, {"$inc": {"cash": int(item['price'] * 0.2)}})
+                self.bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": us['inventory']}})
+                self.bot.users_db.update_one({"_id": interaction.user.id}, {"$inc": {"cash": int(item['price'] * 0.2)}})
                 await interaction.response.send_message(embed=checker.emp_embed(
                     f"Вы продали {item['name']} за {int(item['price'] * 0.2)}"))
 
@@ -554,13 +541,13 @@ class Profiler(commands.Cog):
     @app_commands.command(name="work", description="Отправится в городской патруль")
     @app_commands.checks.cooldown(1, 180, key=lambda i: i.user.id)
     async def work(self, interaction: discord.Interaction):
-        await checker.check(interaction)
-        us = users_db.find_one({"_id": interaction.user.id})
+        await checker.check(self.bot, interaction)
+        us = self.bot.users_db.find_one({"_id": interaction.user.id})
 
         exp = 10 + random.randint(0, 2 * us['luck'])
         cash = 10 + random.randint(0, 2 * us['luck'])
 
-        users_db.update_many({"_id": interaction.user.id},
+        self.bot.users_db.update_many({"_id": interaction.user.id},
                              {"$inc": {"exp": exp, "cash": cash}})
 
         rand = random.randint(1, 3)
@@ -589,7 +576,7 @@ class Profiler(commands.Cog):
                                   "/Neznakomec_industrial_area_of_a_medieval_seaport_where_people_u_877e94cf"
                                   "-5f6f-4961-b79e-18d8c5e2ff00.png")
 
-        lvl_up(interaction.user)
+        lvl_up(self.bot, interaction.user)
 
         await interaction.response.send_message(embed=emb)
 
@@ -597,10 +584,10 @@ class Profiler(commands.Cog):
     @app_commands.describe(id="id предмета в вашем инвентаре, либо глобальный uid предмета, либо название предмета")
     async def item_info(self, interaction: discord.Interaction, id: str):
         if id.__len__() > 2:
-            item = item_db.find_one({"_id": id}) or None
+            item = self.bot.items_db.find_one({"_id": id}) or None
 
             if item is None:
-                item = item_db.find_one({"name": id}) or None
+                item = self.bot.items_db.find_one({"name": id}) or None
 
             if item is None:
                 await interaction.response.send_message(embed=checker.err_embed(f"Предмет с таким uid, либо названием"
@@ -616,8 +603,8 @@ class Profiler(commands.Cog):
                                                         , ephemeral=True)
                 return
 
-            us = users_db.find_one({"_id": interaction.user.id})
-            await checker.check(interaction)
+            us = self.bot.users_db.find_one({"_id": interaction.user.id})
+            await checker.check(self.bot, interaction)
 
             items = {}
             for i in us['inventory']:
@@ -636,7 +623,7 @@ class Profiler(commands.Cog):
             counter = 1
             for i in items.keys():
                 if counter == id:
-                    item = item_db.find_one({"_id": i})
+                    item = self.bot.items_db.find_one({"_id": i})
 
         color = {
             "common": 0xffffff,
@@ -666,5 +653,5 @@ class Profiler(commands.Cog):
         await interaction.response.send_message(embed=emb)
 
 
-def setup(client):
-    client.add_cog(Profiler(client))
+async def setup(client):
+    await client.add_cog(Profiler(client))

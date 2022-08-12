@@ -1,4 +1,5 @@
 import discord
+
 from settings import EMBED_HEX_COLOR
 
 
@@ -26,6 +27,7 @@ class EmbedGenerator(discord.Embed):
             "inline": "bool"\n
         }]\n
     }"""
+
     def __init__(self, json_schema: dict, *args, **kwargs):
         # Инициализация ебмеда
         super().__init__(title=json_schema.get('title', "").format(*args, **kwargs),
@@ -43,7 +45,6 @@ class EmbedGenerator(discord.Embed):
             self.add_field(name=field.get("name", "** **").format(*args, **kwargs),
                            value=field.get("value", "** **").format(*args, **kwargs),
                            inline=field.get("inline", True))
-
 
 # embed = EmbedGenerator(
 #     json_schema={

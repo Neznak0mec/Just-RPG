@@ -1,12 +1,14 @@
 import datetime
+import os
+import traceback
+
 import discord
 from discord import app_commands
-import traceback
 from dotenv import load_dotenv
-import os
-from modules.client import CustomClient
+
 from modules import checker
-from settings import DEFEND_SCROLL_ID
+from modules.client import CustomClient
+from settings import DEFEND_SCROLL_ID, bcolors
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 if os.path.exists(dotenv_path):
@@ -15,7 +17,6 @@ if os.path.exists(dotenv_path):
 TOKEN = os.environ.get("TOKEN")
 MONGO_KEY = os.environ.get("MONGO_KEY")
 
-
 bot = CustomClient(MONGO_KEY)
 
 
@@ -23,7 +24,7 @@ bot = CustomClient(MONGO_KEY)
 @app_commands.checks.bot_has_permissions(moderate_members=True)
 @bot.tree.command(name="проклятие", description="Мьютит участника на 10 минут")
 async def aboba(interaction: discord.Interaction, member: discord.Member):
-    await checker.check(interaction)
+    await checker.check(bot,interaction)
 
     if not bot.servers_db.find_one({"_id": interaction.guild_id})['m_scroll']:
         await interaction.response.send_message(embed=checker.err_embed('На данном сервере запрещено '
@@ -40,25 +41,25 @@ async def aboba(interaction: discord.Interaction, member: discord.Member):
                                                 ephemeral=True)
         return
 
-    atk = users_db.find_one({"_id": interaction.user.id})['inventory']
+    atk = bot.users_db.find_one({"_id": interaction.user.id})['inventory']
 
     if 'a3840ab0-9e1e-49d7-bb03-19b49d3e0cd9' not in atk:
         await interaction.response.send_message(embed=checker.err_embed('У вас нет свитка "Проклятие"'), ephemeral=True)
         return
 
-    def_ = users_db.find_one({"_id": member.id})['inventory'] or None
+    def_ = bot.users_db.find_one({"_id": member.id})['inventory'] or None
     if def_ is not None:
         if DEFEND_SCROLL_ID in def_:
             await interaction.response.send_message(embed=checker.emp_embed(f'У {member.mention} был свиток "Защиты"'
                                                                             f', оба свитка сгорели'))
             def_.remove(DEFEND_SCROLL_ID)
             atk.remove('a3840ab0-9e1e-49d7-bb03-19b49d3e0cd9')
-            users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": atk}})
-            users_db.update_one({"_id": member.id}, {"$set": {"inventory": def_}})
+            bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": atk}})
+            bot.users_db.update_one({"_id": member.id}, {"$set": {"inventory": def_}})
             return
 
     atk.remove('a3840ab0-9e1e-49d7-bb03-19b49d3e0cd9')
-    users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": atk}})
+    bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": atk}})
     await interaction.response.send_message(embed=checker.emp_embed('Проклятие успешно сработало на ' + member.mention))
 
     await member.edit(timed_out_until=discord.utils.utcnow() + datetime.timedelta(minutes=10),
@@ -121,25 +122,25 @@ async def on_message(ctx):
     await bot.process_commands(ctx)
 
 
-def load_cogs(debug=False):
+async def load_cogs(debug=False):
     """Загрузка когов"""
     for filename in os.listdir("./cogs"):
         if not filename.endswith(".py"):
             continue
         try:
-            bot.load_extension(f"cogs.{filename[:-3]}")
+            await bot.load_extension(f"cogs.{filename[:-3]}")
         except Exception as error:
-            print(f'{filename[:-3]}: крашнут')
+            print(bcolors.FAIL+f'{filename[:-3]}: крашнут'+bcolors.ENDC)
             if debug:
                 print(traceback.format_exc())
         else:
-            print(f"{filename[:-3]}: включён")
+            print(bcolors.OKGREEN+f"{filename[:-3]}: включён"+bcolors.ENDC)
     print("=" * 20)
 
 
 @bot.event
 async def on_ready():
-    load_cogs(debug=True)
+    await load_cogs(debug=True)
     await bot.tree.sync()
     print(f"Бот онлайн\nИмя: {bot.user.name}\nid: {bot.user.id}\n")
 

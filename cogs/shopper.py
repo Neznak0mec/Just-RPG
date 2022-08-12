@@ -1,26 +1,8 @@
 import discord
-import pymongo
-import discord
 from discord import app_commands
 from discord.ext import commands
-import random
+
 from modules import checker
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-os.getenv()
-
-connection = ""
-cluster = pymongo.MongoClient(connection)
-# todo: под замену
-db = cluster["MMORPG"]
-
-users_db = db["users"]
-servers_db = db["servers"]
-info_db = db["info"]
-item_db = db["items"]
 
 
 class Dropdown(discord.ui.Select):
@@ -105,16 +87,16 @@ class Shopper(commands.Cog):
 
     @app_commands.command(name="shop", description="посмотреть ассортимент магазина")
     async def shop(self, interaction: discord.Interaction):
-        await checker.check(interaction)
+        await checker.check(self.bot, interaction)
         emb = discord.Embed(title=f'Магазин', description="Выберете вам нужное меню для покупки")
         view = discord.ui.View(timeout=180).add_item(Dropdown(self.bot))
         await interaction.response.send_message(embed=emb, view=view)
 
     @app_commands.command(name="buy", description="преобрести товар")
-    @app_commands.describe(name = "Название товара из магазина. Если название имеет ковычки, то прописывать и их",
-                           amount = "Количество товара которое вы хотите купить")
+    @app_commands.describe(name="Название товара из магазина. Если название имеет ковычки, то прописывать и их",
+                           amount="Количество товара которое вы хотите купить")
     async def buy(self, interaction: discord.Interaction, name: str, amount: int = 1):
-        await checker.check(interaction)
+        await checker.check(self.bot, interaction)
         items = info_db.find_one({"_id": "shop"})["items"]
         item = None
 
@@ -134,7 +116,7 @@ class Shopper(commands.Cog):
                                                     , ephemeral=True)
             return
 
-        item = item_db.find_one({"_id": item["_id"]}) or None
+        item = self.bot.items_db.find_one({"_id": item["_id"]}) or None
 
         if item is None:
             await interaction.response.send_message(embed=checker.err_embed("Такого предмета нет в магазине")
@@ -156,7 +138,8 @@ class Shopper(commands.Cog):
         if us_info['inventory'].__len__() + amount > 30:
             await interaction.response.send_message(embed=checker.err_embed("У вас недостаточно места в инвентаре"
                                                                             " для пребретения этого "
-                                                    "товара в таком количестве"), ephemeral=True)
+                                                                            "товара в таком количестве"),
+                                                    ephemeral=True)
             return
 
         users_db.update_one({"_id": interaction.user.id}, {"$set": {"cash": us_info["cash"] - item["price"] * amount}})
@@ -166,9 +149,9 @@ class Shopper(commands.Cog):
 
         await interaction.response.send_message(embed=checker.emp_embed(f"✅ Вы успешно преобрели \"{item['name']}\" "
                                                                         f"в количестве {amount}шт. потратив"
-                                                f"{amount*item['price']}<:silver:997889161484828826>"), ephemeral=True)
+                                                                        f"{amount * item['price']}<:silver:997889161484828826>"),
+                                                ephemeral=True)
 
 
-def setup(client):
-    client.add_cog(Shopper(client))
-
+async def setup(client):
+    await client.add_cog(Shopper(client))

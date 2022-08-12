@@ -1,10 +1,8 @@
 import discord
-from discord.ext import commands
 from discord import app_commands
-from discord import SelectOption
-from modules import checker
-import pymongo
+from discord.ext import commands
 
+from modules import checker
 
 
 class Settings(commands.Cog):
@@ -15,20 +13,21 @@ class Settings(commands.Cog):
     @app_commands.command(name="свитки", description="Разрешает/запрещает использование свитка проклятья на сервере")
     @app_commands.choices(arg=[app_commands.Choice(name="on", value=1),
                                app_commands.Choice(name="off", value=0)])
-    @app_commands.describe(arg = "0n - разрешить использование свитков, 0ff - запретить использование свитков")
+    @app_commands.describe(arg="0n - разрешить использование свитков, 0ff - запретить использование свитков")
     async def scroll(self, interaction: discord.Interaction, arg: int):
         self.bot.servers_db.update_one({"_id": interaction.guild_id}, {"$set": {"m_scroll": bool(arg)}})
         if arg == 1:
-            await interaction.response.send_message(embed=checker.emp_embed("Свиток \"Проклятие\" включен\n"
-                                                                            "⚠️Убедитесь что у бота есть право "
-                                                                            "`Moderate Members` для выдачи таймаутов"))
+            await interaction.response.send_message(
+                embed=checker.emp_embed(
+                    "Свиток \"Проклятие\" включен\n⚠️Убедитесь что у бота есть право `Moderate Members` для "
+                    "выдачи таймаутов"))
 
         else:
             await interaction.response.send_message(embed=checker.emp_embed("Свиток \"Проклятие\" выключен"))
 
     @app_commands.command(name="info", description="Информация о боте")
     async def info(self, interaction: discord.Interaction):
-        await checker.check(interaction)
+        await checker.check(self.bot, interaction)
         emb = discord.Embed(title=f"**{self.bot.user.name}**")
         emb.add_field(name=f"**Привет! Я бот {self.bot.user.name}! Я являюсь игрой в жанре RPG.**",
                       value="Блогодоря мне вы можете ходить в походы, прокачивать персонажа, выбивать предметы с "
@@ -45,5 +44,5 @@ class Settings(commands.Cog):
         await interaction.response.send_message(embed=emb)
 
 
-def setup(client):
-    client.add_cog(Settings(client))
+async def setup(client):
+    await client.add_cog(Settings(client))

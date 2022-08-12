@@ -1,18 +1,8 @@
-import discord
-from discord.ext import commands
-import pymongo
-from discord import app_commands
 import uuid
 
-connection = ""
-cluster = pymongo.MongoClient(connection)
-# todo: под замену
-db = cluster["MMORPG"]
-
-users_db = db["users"]
-servers_db = db["servers"]
-info_db = db["info"]
-item_db = db["items"]
+import discord
+from discord import app_commands
+from discord.ext import commands
 
 
 def check(author, channel):
@@ -23,8 +13,7 @@ def check(author, channel):
 
 
 class Devel(commands.Cog):
-    def __init__(self, bot, u_db, i_db):
-        global users_db, info_db
+    def __init__(self, bot):
         self.bot = bot
 
     async def cog_check(self, ctx) -> bool:
@@ -54,14 +43,14 @@ class Devel(commands.Cog):
                 "description": description,
             }
 
-        info_db.update_one({"_id": "locations"}, {"$push": {"locations": post}})
+        self.bot.info_db.update_one({"_id": "locations"}, {"$push": {"locations": post}})
 
         await interaction.response.send_message("Локация добавлена")
 
     @app_commands.command(name="rem_loc")
     async def rem_loc(self, interaction: discord.Interaction, name: str):
 
-        info_db.update_one({"_id": "locations"}, {"$pull": {"locations": {"name": name}}})
+        self.bot.info_db.update_one({"_id": "locations"}, {"$pull": {"locations": {"name": name}}})
         await interaction.response.send_message("Локация удалена")
 
     @app_commands.command(name="create_item")
@@ -100,13 +89,13 @@ class Devel(commands.Cog):
                 "give_stats": {},
             }
 
-        item_db.insert_one(post)
+        self.bot.items_db.insert_one(post)
 
         await interaction.response.send_message(f"Предмет добавлен, id предмета `{uid}`")
 
     @app_commands.command(name="rem_item")
     async def rem_item(self, interaction: discord.Interaction, name: str):
-        item_db.delete_one({"name": name})
+        self.bot.items_db.delete_one({"name": name})
         await interaction.response.send_message("Предмет удален")
 
     @app_commands.command(name="add_stat")
@@ -117,12 +106,12 @@ class Devel(commands.Cog):
                                 app_commands.Choice(name="krit", value="krit"),
                                 app_commands.Choice(name="luck", value="luck")])
     async def add_stat(self, interaction: discord.Interaction, id: str, stat: str, value: int):
-        item_db.update_one({"_id": id}, {"$set": {"give_stats." + stat: value}})
+        self.bot.items_db.update_one({"_id": id}, {"$set": {"give_stats." + stat: value}})
         await interaction.response.send_message("Стат изменен")
 
     @app_commands.command(name="add_to_shop")
     async def add_to_shop(self, interaction: discord.Interaction, item_id: str):
-        item = item_db.find_one({"_id": item_id}) or None
+        item = self.bot.items_db.find_one({"_id": item_id}) or None
         if item is None:
             await interaction.response.send_message("Предмет не найден")
             return
@@ -137,13 +126,13 @@ class Devel(commands.Cog):
                 "description": item["description"]
             }
 
-        info_db.update_one({"_id": "shop"}, {"$push": {"items": post}})
+        self.bot.info_db.update_one({"_id": "shop"}, {"$push": {"items": post}})
 
         await interaction.response.send_message("Добавлено в магазин")
 
     @app_commands.command(name="rem_from_shop")
     async def rem_from_shop(self, interaction: discord.Interaction, item_id: str):
-        info_db.update_one({"_id": "shop"}, {"$pull": {"items": item_id}})
+        self.bot.info_db.update_one({"_id": "shop"}, {"$pull": {"items": item_id}})
         await interaction.response.send_message("Удалено из магазина")
 
     @app_commands.command(name="give_item")
@@ -154,16 +143,16 @@ class Devel(commands.Cog):
             await interaction.response.send_message("Неверный id пользователя")
             return
 
-        if users_db.count_documents({"_id": us_id}) == 0:
+        if self.bot.users_db.count_documents({"_id": us_id}) == 0:
             await interaction.response.send_message("пользователя не существует")
             return
-        if item_db.count_documents({"_id": item_id}) == 0:
+        if self.bot.items_db.count_documents({"_id": item_id}) == 0:
             await interaction.response.send_message("предмета не существует")
             return
 
-        item = item_db.find_one({"_id": item_id})
+        item = self.bot.items_db.find_one({"_id": item_id})
 
-        users_db.update_one({"_id": us_id}, {"$push": {"inventory": item['_id']}})
+        self.bot.users_db.update_one({"_id": us_id}, {"$push": {"inventory": item['_id']}})
         await interaction.response.send_message(f"Предмет `{item['_id']}` добавлен в инвентарь {us_id}")
 
     @app_commands.command(name="take_item", description="отобрать предмет")
@@ -174,21 +163,21 @@ class Devel(commands.Cog):
             await interaction.response.send_message("Неверный id пользователя")
             return
 
-        if users_db.count_documents({"_id": user.id}) == 0 or user is None:
+        if self.bot.users_db.count_documents({"_id": user.id}) == 0 or user is None:
             await interaction.response.send_message("пользователя не существует")
             return
-        if item_db.count_documents({"_id": item_id}) == 0:
+        if self.bot.items_db.count_documents({"_id": item_id}) == 0:
             await interaction.response.send_message("предмета не существует")
             return
 
-        item = item_db.find_one({"_id": item_id})
+        item = self.bot.items_db.find_one({"_id": item_id})
 
-        users_db.update_one({"_id": interaction.user.id}, {"$pull": {"inventory": item}})
+        self.bot.users_db.update_one({"_id": interaction.user.id}, {"$pull": {"inventory": item}})
         await interaction.response.send_message(f"Предмет `{item['_id']}` удален из инвентаря {user.id}")
 
     @app_commands.command(name="add_drop")
     async def add_drop(self, interaction: discord.Interaction, dungeon: str, item_id: str, chance: int):
-        dungeons = info_db.find_one({"_id": 'locations'})['loks'] or None
+        dungeons = self.bot.info_db.find_one({"_id": 'locations'})['loks'] or None
         counter = 0
         for i in dungeons:
             if i['name'].lower() == dungeon.lower():
@@ -200,7 +189,7 @@ class Devel(commands.Cog):
             await interaction.response.send_message("Данной локации не существует")
             return
 
-        if item_db.count_documents({"_id": item_id}) == 0:
+        if self.bot.items_db.count_documents({"_id": item_id}) == 0:
             await interaction.response.send_message("предмета не существует")
             return
 
@@ -208,24 +197,22 @@ class Devel(commands.Cog):
             item_id: chance
         }
 
-        info_db.update_one({"_id": "locations"}, {"$set": {"loks." + str(counter) + ".drop."+item_id: chance}})
+        self.bot.info_db.update_one({"_id": "locations"},
+                                    {"$set": {"loks." + str(counter) + ".drop." + item_id: chance}})
 
         await interaction.response.send_message(f"{item_id} добвлен на локацию с шансом 1\{chance}")
-        #
-    # @app_commands.command(name="upd")
-    # async def upd(self, interaction: discord.Interaction):
-    #     users_db.update_many({}, {"$set": {"inventory": []}})
 
     @app_commands.command(name="add_image")
     async def add_image(self, interaction: discord.Interaction, id: str, image: str):
-        if item_db.count_documents({"_id": id}) == 0:
+        if self.bot.items_db.count_documents({"_id": id}) == 0:
             await interaction.response.send_message("предмета не существует")
             return
 
-        item_db.update_one({"_id": id}, {"$set": {"image": image}})
+        self.bot.items_db.update_one({"_id": id}, {"$set": {"image": image}})
 
         await interaction.response.send_message(f"Изображение добавлено для {id}")
 
 
-def setup(client):
-    client.add_cog(Devel(client))
+async def setup(client):
+    await client.add_cog(Devel(client))
+    pass

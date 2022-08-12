@@ -1,16 +1,7 @@
 import datetime
 
-import pymongo
 import discord
-
-connection = ""
-cluster = pymongo.MongoClient(connection)
-# todo: под замену
-db = cluster["MMORPG"]
-
-users_db = db["users"]
-servers_db = db["servers"]
-info_db = db["info"]
+import pymongo
 
 
 def get_time(oba: datetime.datetime):
@@ -25,8 +16,8 @@ def get_time(oba: datetime.datetime):
     return sotr
 
 
-async def check(interaction: discord.Interaction):
-    if users_db.count_documents({"_id": interaction.user.id}) == 0:
+async def check(bot, interaction: discord.Interaction):
+    if bot.users_db.count_documents({"_id": interaction.user.id}) == 0:
         post = {
             "_id": interaction.user.id,
             "cash": 0,
@@ -52,15 +43,15 @@ async def check(interaction: discord.Interaction):
                 },
             "inventory": [],
         }
-        users_db.insert_one(post)
+        bot.users_db.insert_one(post)
 
-    if servers_db.count_documents({"_id": interaction.guild_id}) == 0:
+    if bot.servers_db.count_documents({"_id": interaction.guild_id}) == 0:
         post = {
             "_id": interaction.guild_id,
             "m_scroll": False,
             "language": "ru"
         }
-        servers_db.insert_one(post)
+        bot.servers_db.insert_one(post)
 
 
 def err_embed(text: str):
@@ -69,4 +60,3 @@ def err_embed(text: str):
 
 def emp_embed(text: str):
     return discord.Embed(description=text)
-
