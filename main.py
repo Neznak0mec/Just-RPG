@@ -7,6 +7,7 @@ from modules import checker
 import traceback
 from dotenv import load_dotenv
 import os
+from modules.client import CustomClient
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 if os.path.exists(dotenv_path):
@@ -15,15 +16,8 @@ if os.path.exists(dotenv_path):
 TOKEN = os.environ.get("TOKEN")
 MONGO_KEY = os.environ.get("MONGO_KEY")
 
-intents = discord.Intents.all()
 
-bot = commands.Bot(command_prefix="%%%", intents=intents)
-cluster = pymongo.MongoClient(MONGO_KEY)
-db = cluster["MMORPG"]
-
-users_db = db["users"]
-servers_db = db["servers"]
-info_db = db["info"]
+bot = CustomClient(MONGO_KEY)
 
 
 @app_commands.checks.cooldown(1, 180, key=lambda i: i.user.id)
@@ -32,7 +26,7 @@ info_db = db["info"]
 async def aboba(interaction: discord.Interaction, member: discord.Member):
     await checker.check(interaction)
 
-    if not servers_db.find_one({"_id": interaction.guild_id})['m_scroll']:
+    if not bot.servers_db.find_one({"_id": interaction.guild_id})['m_scroll']:
         await interaction.response.send_message(embed=checker.err_embed('На данном сервере запрещено '
                                                                         'использовать проклятия'),
                                                 ephemeral=True)

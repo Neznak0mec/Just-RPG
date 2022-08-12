@@ -2,17 +2,9 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from discord import SelectOption
-
 from modules import checker
 import pymongo
 
-connection = ""
-cluster = pymongo.MongoClient(connection)
-db = cluster["MMORPG"]
-
-users_db = db["users"]
-servers_db = db["servers"]
-info_db = db["info"]
 
 
 class Settings(commands.Cog):
@@ -25,7 +17,7 @@ class Settings(commands.Cog):
                                app_commands.Choice(name="off", value=0)])
     @app_commands.describe(arg = "0n - разрешить использование свитков, 0ff - запретить использование свитков")
     async def scroll(self, interaction: discord.Interaction, arg: int):
-        servers_db.update_one({"_id": interaction.guild_id}, {"$set": {"m_scroll": bool(arg)}})
+        self.bot.servers_db.update_one({"_id": interaction.guild_id}, {"$set": {"m_scroll": bool(arg)}})
         if arg == 1:
             await interaction.response.send_message(embed=checker.emp_embed("Свиток \"Проклятие\" включен\n"
                                                                             "⚠️Убедитесь что у бота есть право "
