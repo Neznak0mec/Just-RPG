@@ -26,7 +26,7 @@ async def check(bot, interaction: discord.Interaction):
             "exp": 0,
             "exp_to_lvl": 100,
             "skill_points": 0,
-            "heal": 100,
+            "hp": 100,
             "damage": 1,
             "defence": 1,
             "speed": 1,
@@ -34,7 +34,7 @@ async def check(bot, interaction: discord.Interaction):
             "luck": 1,
             "equipment":
                 {
-                    "helem": None,
+                    "helmet": None,
                     "armor": None,
                     "pants": None,
                     "shoes": None,

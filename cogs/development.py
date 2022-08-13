@@ -54,7 +54,7 @@ class Devel(commands.Cog):
         await interaction.response.send_message("Локация удалена")
 
     @app_commands.command(name="create_item")
-    @app_commands.choices(type=[app_commands.Choice(name="helem", value="helem"),
+    @app_commands.choices(type=[app_commands.Choice(name="helmet", value="helmet"),
                                 app_commands.Choice(name="armor", value="armor"),
                                 app_commands.Choice(name="pants", value="pants"),
                                 app_commands.Choice(name="shoes", value="shoes"),
@@ -99,7 +99,7 @@ class Devel(commands.Cog):
         await interaction.response.send_message("Предмет удален")
 
     @app_commands.command(name="add_stat")
-    @app_commands.choices(stat=[app_commands.Choice(name="heal", value="heal"),
+    @app_commands.choices(stat=[app_commands.Choice(name="hp", value="hp"),
                                 app_commands.Choice(name="damage", value="damage"),
                                 app_commands.Choice(name="defence", value="defence"),
                                 app_commands.Choice(name="speed", value="speed"),

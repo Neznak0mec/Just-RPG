@@ -17,11 +17,11 @@ def dmg_randomer(dmg):
 def stats_calc(bot, player):
     us = bot.users_db.find_one({"_id": player.id})
 
-    stats = {'heal': us['heal'],
+    stats = {'hp': us['hp'],
              'damage': us['damage'],
              'defence': us['defence'],
              'max_def': us['defence'],
-             'max_hp': us['heal'],
+             'max_hp': us['hp'],
              'speed': us['speed'],
              'luck': us['luck'],
              'krit': us['krit'],
@@ -38,7 +38,7 @@ def stats_calc(bot, player):
             stats[f] += item['give_stats'][f]
 
     stats['max_def'] = stats['defence']
-    stats['max_hp'] = stats['heal']
+    stats['max_hp'] = stats['hp']
 
     return stats
 
@@ -65,18 +65,21 @@ class SelectDungeon(discord.ui.Select):
         dan = self.bot.info_db.find_one({"_id": "locations"})['loks']
 
         for i in dan:
-            options.append(discord.SelectOption(label=f"{i['name']} - {i['lvl']}", description=i['description']))
+            options.append(discord.SelectOption(label=f"{i['name']} - {i['lvl']}",
+                                                description=i['description']))
 
         self.author = ctx.user
         self.stats = stats_calc(self.bot, ctx.user)
 
-        super().__init__(placeholder='Выбери локацию для битвы с монстром', min_values=1, max_values=1,
+        super().__init__(placeholder='Выбери локацию для битвы с монстром',
+                         min_values=1,
+                         max_values=1,
                          options=options)
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            await interaction.response.send_message(embed=checker.err_embed(
-                f"Это не вы собираетесь в путешествие"), ephemeral=True)
+            await interaction.response.send_message(embed=checker.err_embed(f"Это не вы собираетесь в путешествие"),
+                                                    ephemeral=True)
             return
         dan = self.bot.info_db.find_one({"_id": "locations"})['loks']
 
@@ -90,7 +93,7 @@ class SelectDungeon(discord.ui.Select):
         mob = {
             "name": random.choice(dan['monsters']),
             "lvl": lvl,
-            "heal": hp_gen,
+            "hp": hp_gen,
             "max_hp": hp_gen,
             "defence": 0,
             "max_def": 0,
@@ -107,9 +110,9 @@ class SelectDungeon(discord.ui.Select):
 
 
 def hp_calc(stats):
-    proc = stats['heal'] / stats['max_hp'] * 100
+    proc = stats['hp'] / stats['max_hp'] * 100
     return "[" + "█" * int(proc / 10 - 1) + (lambda: "█" if int(proc) % 10 >= 5 else "▒")() + "-" * (
-            10 - int(proc / 10) - 1) + "]" + f" {stats['heal']:.2f}/{stats['max_hp']}"
+            10 - int(proc / 10) - 1) + "]" + f" {stats['hp']:.2f}/{stats['max_hp']}"
 
 
 def def_calc(oba):
@@ -170,7 +173,7 @@ def game_win(mob, log, stats, author, drop, bot):
     log += f"Вы победили\nВ качестве награды вы получили exp - {exp} и монет - {coins}\n"
 
     emb = discord.Embed(title=f"Победа", description="\u200b")
-    if lvl_up(author):
+    if lvl_up(bot,author):
         log += f"Вы получили новый уровень\n"
     emb.add_field(name="Логи", value=log, inline=False)
     emb.set_thumbnail(url=mob['url'])
@@ -196,10 +199,10 @@ def fight(atk, def_):
     if def_['defence'] is not None and def_['defence'] > 0:
         def_['defence'] -= atk
         if def_['defence'] < 0:
-            def_['heal'] += def_['defence']
+            def_['hp'] += def_['defence']
             def_['defence'] = 0
     else:
-        def_['heal'] -= atk
+        def_['hp'] -= atk
 
 
 class DungeonView(discord.ui.View):
@@ -210,7 +213,7 @@ class DungeonView(discord.ui.View):
         self.author = author
         self.stats = stats
         self.mob = mob
-        self.max_hp = self.stats['heal']
+        self.max_hp = self.stats['hp']
         self.interaction = iteration
         self.game_end = False
 
@@ -218,8 +221,8 @@ class DungeonView(discord.ui.View):
         self.interaction = interaction
 
         if interaction.user.id != self.author.id:
-            await interaction.response.send_message(embed=checker.err_embed(
-                f"Вы не участвуете в данном походе"), ephemeral=True)
+            await interaction.response.send_message(embed=checker.err_embed(f"Вы не участвуете в данном походе"),
+                                                    ephemeral=True)
 
         return interaction.user.id == self.author.id
 
@@ -239,7 +242,7 @@ class DungeonView(discord.ui.View):
 
         dmg_bonus = dmg_randomer(self.mob['damage'])
 
-        if self.mob['heal'] > 0:
+        if self.mob['hp'] > 0:
 
             if random.randint(1, 100 - self.stats['speed']) != 1:
                 fight(self.mob['damage'] + dmg_bonus, self.stats)
@@ -248,7 +251,7 @@ class DungeonView(discord.ui.View):
             else:
                 log += "Вы укланились от атаки\n"
 
-            if self.stats['heal'] <= 0:
+            if self.stats['hp'] <= 0:
                 self.attack.disabled = True
                 self.run.disabled = True
                 self.hp.disabled = True
@@ -281,9 +284,9 @@ class DungeonView(discord.ui.View):
         for i in self.stats['items']:
             if i['_id'] == 'fb75ff73-1116-4e95-ae46-8075c4e9a782':
 
-                self.stats['heal'] += self.max_hp / 4
-                if self.stats['heal'] > self.max_hp:
-                    self.stats['heal'] = self.max_hp
+                self.stats['hp'] += self.max_hp / 4
+                if self.stats['hp'] > self.max_hp:
+                    self.stats['hp'] = self.max_hp
 
                 self.stats['items'].remove(i)
                 # remove item from user's inventory
@@ -300,7 +303,7 @@ class DungeonView(discord.ui.View):
                     fight(self.mob['damage'] + dmg_bonus, self.stats)
                     log += f"Притивнику удалось нанести вам {self.mob['damage'] + dmg_bonus:.2f} урона\n"
 
-                    if self.stats['heal'] <= 0:
+                    if self.stats['hp'] <= 0:
                         await self.stop()
 
                         await interaction.response.edit_message(
@@ -323,7 +326,7 @@ class DungeonView(discord.ui.View):
             fight(self.mob['damage'] + dmg_bonus, self.stats)
             log += f"Пока вы лазили по сумке, противник нанёс {self.mob['damage'] + dmg_bonus:.2f} урона\n"
 
-            if self.stats['heal'] <= 0:
+            if self.stats['hp'] <= 0:
                 await self.stop()
                 await interaction.response.edit_message(embed=game_loose(self.mob, log, self.author, self.bot),
                                                         view=self)
@@ -366,7 +369,7 @@ class DungeonView(discord.ui.View):
             fight(self.mob['damage'] + dmg_bonus, self.stats)
             log = f"Вам не удалось сбежать, враг нанёс вам {self.mob['damage'] + dmg_bonus:.2f} урона\n"
 
-        if self.stats['heal'] <= 0:
+        if self.stats['hp'] <= 0:
             log += "Вы погибли\n"
 
             await self.stop()

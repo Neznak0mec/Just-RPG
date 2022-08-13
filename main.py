@@ -96,31 +96,6 @@ async def aboba(interaction: discord.Interaction, member: discord.Member):
 #         print(error)
 
 
-@bot.event
-async def on_message(ctx):
-    if ctx.author.bot:
-        return
-
-    if ctx.content.startswith(f'<@!{bot.user.id}>') or ctx.content.startswith(f'<@{bot.user.id}>'):
-        emb = discord.Embed(title=f"**{bot.user.name}**")
-        emb.add_field(name=f"**Привет! Я бот {bot.user.name}! Я являюсь игрой в жанре RPG.**",
-                      value="Блогодоря мне вы можете ходить в походы, прокачивать персонажа, выбивать предметы с "
-                            "монстров... короче почти всё что есть в обычной  RPG 🤗\n\n "
-                            f"**Если возникли технические шоколадки, либо нужна помощь,свяжитесь с нами на "
-                            f"официальном сервере поддержки "
-                            f"бота:** [Официальный сервер бота](https://discord.gg/eZKrFTv7D8)\n"
-                            f"Так же в нашу команду требуются художники и кодеры, так что будем рады любой помощи 😘"
-                      # f"[Поддержка автора](https://www.donationalerts.com/r/neznakomec_)"
-                      )
-        aba = await bot.fetch_user(426986442632462347)
-        emb.set_footer(text=aba.name + "#" + aba.discriminator + " ©", icon_url=aba.avatar.url)
-
-        await ctx.send(embed=emb)
-
-        return
-
-    await bot.process_commands(ctx)
-
 
 async def load_cogs(debug=False):
     """Загрузка когов"""
@@ -147,3 +122,5 @@ async def on_ready():
 
 if __name__ == "__main__":
     bot.run(TOKEN)
+#     todo: заметить в бд helem на helmet
+#     todo: заметить в бд heal на hp

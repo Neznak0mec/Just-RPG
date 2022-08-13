@@ -39,7 +39,8 @@ class Settings(commands.Cog):
                       # f"[Поддержка автора](https://www.donationalerts.com/r/neznakomec_)"
                       )
         aba = await self.bot.fetch_user(426986442632462347)
-        emb.set_footer(text=aba.name + "#" + aba.discriminator + " ©", icon_url=aba.avatar.url)
+        emb.set_footer(text=aba.name + "#" + aba.discriminator + " ©",
+                       icon_url=aba.avatar.url)
 
         await interaction.response.send_message(embed=emb)
 

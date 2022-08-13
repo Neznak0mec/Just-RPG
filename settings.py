@@ -1,4 +1,5 @@
 DEFEND_SCROLL_ID = "7f12ec8e-71b9-4c11-8d2c-8c26fcf0db6c"
+ATACK_SCROLL_ID = "7f12ec8e-71b9-4c11-8d2c-8c26fcf0db6c"
 EMBED_HEX_COLOR = "0x122faa"
 
 

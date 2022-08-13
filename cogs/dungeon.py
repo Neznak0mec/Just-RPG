@@ -23,18 +23,18 @@ class Dun(discord.ui.View):
     def upd_select(self):
         self.select.options = []
         self.select.add_option(label="1 - " + self.enemies[0]['name'], description=
-        f"{self.enemies[0]['heal'] / self.enemies[0]['max_hp'] * 100:.2f}", emoji="❤️",
+        f"{self.enemies[0]['hp'] / self.enemies[0]['max_hp'] * 100:.2f}", emoji="❤️",
                                value="0")
 
         self.select.add_option(label="2 - " + self.enemies[1]['name'], description=
-        f"{self.enemies[1]['heal'] / self.enemies[1]['max_hp'] * 100:.2f}", emoji="❤️"
+        f"{self.enemies[1]['hp'] / self.enemies[1]['max_hp'] * 100:.2f}", emoji="❤️"
                                , value="1")
         self.select.add_option(label="3 - " + self.enemies[2]['name'], description=
-        f"{self.enemies[2]['heal'] / self.enemies[2]['max_hp'] * 100:.2f}", emoji="❤️"
+        f"{self.enemies[2]['hp'] / self.enemies[2]['max_hp'] * 100:.2f}", emoji="❤️"
                                , value="2")
 
         for i in self.enemies:
-            if i['heal'] == 0:
+            if i['hp'] == 0:
                 self.select.options[self.enemies.index(i)].emoji = "☠️"
             if self.enemies.index(i) == self.curr:
                 self.select.options[self.enemies.index(i)].emoji = "⚔️"
@@ -43,10 +43,10 @@ class Dun(discord.ui.View):
         if def_['defence'] is not None and def_['defence'] > 0:
             def_['defence'] -= atk
             if def_['defence'] < 0:
-                def_['heal'] += def_['defence']
+                def_['hp'] += def_['defence']
                 def_['defence'] = 0
         else:
-            def_['heal'] -= atk
+            def_['hp'] -= atk
 
     @discord.ui.select(options=[], row=0, placeholder="Выберите противника")
     async def select(self, interaction: discord.Interaction, options):
@@ -74,15 +74,15 @@ class Dun(discord.ui.View):
 
         dead = [False, False, False]
         for i in self.enemies:
-            if i['heal'] <= 0:
-                if i['heal'] < 0:
-                    i['heal'] = 0
+            if i['hp'] <= 0:
+                if i['hp'] < 0:
+                    i['hp'] = 0
                 dead[self.enemies.index(i)] = True
 
         if any(dead):
             for i in self.enemies:
 
-                if i['heal'] > 0:
+                if i['hp'] > 0:
 
                     dmg_bonus = dmg_randomer(i['damage'])
 
@@ -93,7 +93,7 @@ class Dun(discord.ui.View):
                     else:
                         log += "Вы укланились от атаки\n"
 
-                    if self.stats['heal'] <= 0:
+                    if self.stats['hp'] <= 0:
                         self.attack.disabled = True
                         self.run.disabled = True
                         self.hp.disabled = True
@@ -184,7 +184,7 @@ class Dungeon(commands.Cog):
         mob = {
             "name": "uwu",
             "lvl": 1,
-            'heal': 20,
+            'hp': 20,
             'damage': 1,
             'defence': None,
             'max_def': None,
@@ -197,7 +197,7 @@ class Dungeon(commands.Cog):
         mob2 = {
             "name": "ywy",
             "lvl": 1,
-            'heal': 30,
+            'hp': 30,
             'damage': 1,
             'defence': None,
             'max_def': None,
@@ -210,7 +210,7 @@ class Dungeon(commands.Cog):
         mob3 = {
             "name": "owo",
             "lvl": 1,
-            'heal': 40,
+            'hp': 40,
             'damage': 1,
             'defence': None,
             'max_def': None,

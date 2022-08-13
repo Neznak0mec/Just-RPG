@@ -11,8 +11,8 @@ def lvl_up(bot, user):
     us = bot.users_db.find_one({"_id": user.id})
     if us['exp_to_lvl'] <= us['exp']:
         bot.users_db.update_one({"_id": user.id}, {"$set": {"exp": 0},
-                                               "$inc": {"exp_to_lvl": us['exp_to_lvl'] / 5, "lvl": 1,
-                                                        "skill_points": 3}})
+                                                   "$inc": {"exp_to_lvl": us['exp_to_lvl'] / 5, "lvl": 1,
+                                                            "skill_points": 3}})
         return True
 
     return False
@@ -20,7 +20,7 @@ def lvl_up(bot, user):
 
 def stats_get(stats):
     names = {
-        "heal": "Хп",
+        "hp": "Хп",
         "damage": "Урон",
         "defence": "Защита",
         "speed": "Скорость",
@@ -47,7 +47,7 @@ class Up_Skills(discord.ui.View):
 
         self.stats = self.bot.users_db.find_one({"_id": self.author.id})
 
-        self.heal.label = f"{self.stats['heal']} - хп"
+        self.heal.label = f"{self.stats['hp']} - хп"
         self.armor.label = f"{self.stats['defence']} - броня"
         self.dmg.label = f"{self.stats['damage']} - урон"
         self.speed.label = f"{self.stats['speed']} - ловкость"
@@ -81,8 +81,8 @@ class Up_Skills(discord.ui.View):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         self.interaction = interaction
         if interaction.user.id != self.author.id:
-            await interaction.response.send_message(embed=checker.err_embed(
-                f"Вам нельзя взаимодействовать с этим"), ephemeral=True)
+            await interaction.response.send_message(embed=checker.err_embed(f"Вам нельзя взаимодействовать с этим"),
+                                                    ephemeral=True)
 
         return interaction.user.id == self.author.id
 
@@ -149,7 +149,7 @@ class Up_Skills(discord.ui.View):
     async def profile(self, interaction: discord.Interaction, button: discord.ui.Button):
         us = self.bot.users_db.find_one({"_id": interaction.user.id})
 
-        stats = {'heal': str(us['heal']),
+        stats = {'hp': str(us['hp']),
                  'damage': str(us['damage']),
                  'defence': str(us['defence']),
                  'speed': str(us['speed']),
@@ -157,7 +157,7 @@ class Up_Skills(discord.ui.View):
                  'krit': str(us['krit']),
                  'skill_points': str(us['skill_points'])}
 
-        plus_stats = {'heal': 0,
+        plus_stats = {'hp': 0,
                       'damage': 0,
                       'defence': 0,
                       'speed': 0,
@@ -192,7 +192,7 @@ class Up_Skills(discord.ui.View):
 
         await interaction.response.edit_message(embed=emb, view=Inventory(interaction.user, interaction.user, self.bot))
 
-    async def on_error(self, interaction, error: Exception, item) -> None:
+    async def on_error(self, interaction, error: Exception, item):
         if isinstance(error, TimeoutError):
             await self.on_timeout()
 
@@ -210,7 +210,7 @@ class Inventory(discord.ui.View):
         if self.author.id != self.member.id:
             self.lvl.disabled = True
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
             await interaction.response.send_message(embed=checker.err_embed(
                 f"Вам нельзя взаимодействовать с этим"), ephemeral=True)
@@ -228,7 +228,7 @@ class Inventory(discord.ui.View):
 
         us = self.bot.users_db.find_one({"_id": self.member.id})
 
-        stats = {'heal': str(us['heal']),
+        stats = {'hp': str(us['hp']),
                  'damage': str(us['damage']),
                  'defence': str(us['defence']),
                  'speed': str(us['speed']),
@@ -236,7 +236,7 @@ class Inventory(discord.ui.View):
                  'krit': str(us['krit']),
                  'skill_points': str(us['skill_points'])}
 
-        plus_stats = {'heal': 0,
+        plus_stats = {'hp': 0,
                       'damage': 0,
                       'defence': 0,
                       'speed': 0,
@@ -283,10 +283,10 @@ class Inventory(discord.ui.View):
 
         emb = discord.Embed(title=f"Экипировка {self.member.name}", description="")
 
-        if us['equipment']['helem'] is None:
+        if us['equipment']['helmet'] is None:
             emb.add_field(name="Шлем", value="Не надето", inline=True)
         else:
-            item = self.bot.items_db.find_one({"_id": us['equipment']['helem']})
+            item = self.bot.items_db.find_one({"_id": us['equipment']['helmet']})
             emb.add_field(name=f"Шлем - {item['name']}", value=stats_get(item['give_stats']), inline=True)
 
         if us['equipment']['armor'] is None:
@@ -325,7 +325,7 @@ class Inventory(discord.ui.View):
                        emoji='<:inventory:1004832752878768128>')
     async def right(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.interaction = interaction
-        await checker.check(self.bot,interaction)
+        await checker.check(self.bot, interaction)
         self.central.disabled = False
         self.left.disabled = False
         self.right.disabled = True
@@ -394,7 +394,7 @@ class Profiler(commands.Cog):
                 f"профиля"), ephemeral=True)
             return
 
-        stats = {'heal': str(us['heal']),
+        stats = {'hp': str(us['hp']),
                  'damage': str(us['damage']),
                  'defence': str(us['defence']),
                  'speed': str(us['speed']),
@@ -402,7 +402,7 @@ class Profiler(commands.Cog):
                  'krit': str(us['krit']),
                  'skill_points': str(us['skill_points'])}
 
-        plus_stats = {'heal': 0,
+        plus_stats = {'hp': 0,
                       'damage': 0,
                       'defence': 0,
                       'speed': 0,
@@ -465,20 +465,24 @@ class Profiler(commands.Cog):
                     return
                 else:
                     if us['equipment'][item['type']] is None:
-                        self.bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"equipment." + item['type']: i}})
+                        self.bot.users_db.update_one({"_id": interaction.user.id},
+                                                     {"$set": {"equipment." + item['type']: i}})
                         item = self.bot.items_db.find_one({"_id": i})
                         us['inventory'].remove(i)
-                        self.bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": us['inventory']}})
+                        self.bot.users_db.update_one({"_id": interaction.user.id},
+                                                     {"$set": {"inventory": us['inventory']}})
                         await interaction.response.send_message(embed=checker.emp_embed(f"Вы одели {item['name']}"))
                         return
                     else:
                         unek = self.bot.users_db.find_one({"_id": interaction.user.id})['equipment'][item['type']]
                         info = self.bot.items_db.find_one({"_id": unek})
 
-                        self.bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"equipment." + item['type']: i}})
+                        self.bot.users_db.update_one({"_id": interaction.user.id},
+                                                     {"$set": {"equipment." + item['type']: i}})
                         us['inventory'].remove(i).append(unek)
 
-                        self.bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": us['inventory']}})
+                        self.bot.users_db.update_one({"_id": interaction.user.id},
+                                                     {"$set": {"inventory": us['inventory']}})
                         await interaction.response.send_message(embed=checker.emp_embed(f"Вы сняли {info['name']} "
                                                                                         f"и одели {item['name']}"))
 
@@ -487,7 +491,7 @@ class Profiler(commands.Cog):
             counter += 1
 
     @app_commands.command(name="unequip", description="Снять вещь")
-    @app_commands.choices(type=[app_commands.Choice(name="Шлем", value="helem"),
+    @app_commands.choices(type=[app_commands.Choice(name="Шлем", value="helmet"),
                                 app_commands.Choice(name="Нагрудник", value="armor"),
                                 app_commands.Choice(name="Штаны", value="pants"),
                                 app_commands.Choice(name="Ботинки", value="shoes"),
@@ -498,8 +502,8 @@ class Profiler(commands.Cog):
         await checker.check(self.bot, interaction)
         us = self.bot.users_db.find_one({"_id": interaction.user.id})
         if us['equipment'][type] is None:
-            await interaction.response.send_message(embed=checker.err_embed(
-                f"В этом слоте ничего нет"), ephemeral=True)
+            await interaction.response.send_message(embed=checker.err_embed(f"В этом слоте ничего нет"),
+                                                    ephemeral=True)
             return
         item = self.bot.items_db.find_one({"_id": us['equipment'][type]})
         self.bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"equipment." + type: None}})
@@ -521,8 +525,8 @@ class Profiler(commands.Cog):
                 items[i] = 1
 
         if id > items.__len__() or id < 1:
-            await interaction.response.send_message(embed=checker.err_embed(f"У вас нет предмета с указанным id")
-                                                    , ephemeral=True)
+            await interaction.response.send_message(embed=checker.err_embed(f"У вас нет предмета с указанным id"),
+                                                    ephemeral=True)
             return
 
         counter = 1
@@ -548,7 +552,7 @@ class Profiler(commands.Cog):
         cash = 10 + random.randint(0, 2 * us['luck'])
 
         self.bot.users_db.update_many({"_id": interaction.user.id},
-                             {"$inc": {"exp": exp, "cash": cash}})
+                                      {"$inc": {"exp": exp, "cash": cash}})
 
         rand = random.randint(1, 3)
 
@@ -599,8 +603,8 @@ class Profiler(commands.Cog):
             try:
                 id = int(id)
             except ValueError:
-                await interaction.response.send_message(embed=checker.err_embed(f"id указан неверно")
-                                                        , ephemeral=True)
+                await interaction.response.send_message(embed=checker.err_embed(f"id указан неверно"),
+                                                        ephemeral=True)
                 return
 
             us = self.bot.users_db.find_one({"_id": interaction.user.id})
@@ -614,8 +618,8 @@ class Profiler(commands.Cog):
                     items[i] = 1
 
             if id > items.__len__() or id < 1:
-                await interaction.response.send_message(embed=checker.err_embed(f"У вас нет предмета с указанным id")
-                                                        , ephemeral=True)
+                await interaction.response.send_message(embed=checker.err_embed(f"У вас нет предмета с указанным id"),
+                                                        ephemeral=True)
                 return
 
             item = None
