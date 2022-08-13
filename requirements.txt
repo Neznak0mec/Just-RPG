@@ -1,3 +1,4 @@
-discord==2.0.0a4491+ge269904b
+
+
 pymongo==4.0.2
 python-dotenv
