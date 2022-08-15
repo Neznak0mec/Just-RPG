@@ -4,7 +4,21 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from cogs.adventure import dmg_randomer, stats_calc, game_emb
+
+from cogs.adventure import dmg_randomer, stats_calc, game_emb, game_run, game_win, game_loose
+
+
+HEAL_POTION_ID = "fb75ff73-1116-4e95-ae46-8075c4e9a782"
+
+'''
+шо ещё надо делать (todo кароч):
+1. рандомный дроп
+2. генератор монстрюков
+3. удаление вещи из бд с вещами если ни у кого из пользователей данного предмета нет
+3. больше рефакторинга богу рефакторинга
+4. надо подумать🤔
+6. я знаю что тут два третьих номера
+'''
 
 
 class Dun(discord.ui.View):
@@ -17,21 +31,26 @@ class Dun(discord.ui.View):
         self.enemies = enemy
         self.curr = 0
         self.game_end = False
-        self.inventory = self.bot.users_db.find_one({"id": self.author.id})['inventory']
+        self.drop = None
+        self.inventory = self.bot.users_db.find_one({"_id": author.id})['inventory']
         self.upd_select()
 
     def upd_select(self):
         self.select.options = []
-        self.select.add_option(label="1 - " + self.enemies[0]['name'], description=
-        f"{self.enemies[0]['hp'] / self.enemies[0]['max_hp'] * 100:.2f}", emoji="❤️",
+        self.select.add_option(label="1 - " + self.enemies[0]['name'],
+                               description=f"{self.enemies[0]['hp'] / self.enemies[0]['max_hp'] * 100:.2f}",
+                               emoji="❤️",
                                value="0")
 
-        self.select.add_option(label="2 - " + self.enemies[1]['name'], description=
-        f"{self.enemies[1]['hp'] / self.enemies[1]['max_hp'] * 100:.2f}", emoji="❤️"
-                               , value="1")
-        self.select.add_option(label="3 - " + self.enemies[2]['name'], description=
-        f"{self.enemies[2]['hp'] / self.enemies[2]['max_hp'] * 100:.2f}", emoji="❤️"
-                               , value="2")
+        self.select.add_option(label="2 - " + self.enemies[1]['name'],
+                               description=f"{self.enemies[1]['hp'] / self.enemies[1]['max_hp'] * 100:.2f}",
+                               emoji="❤️",
+                               value="1")
+
+        self.select.add_option(label="3 - " + self.enemies[2]['name'],
+                               description=f"{self.enemies[2]['hp'] / self.enemies[2]['max_hp'] * 100:.2f}",
+                               emoji="❤️",
+                               value="2")
 
         for i in self.enemies:
             if i['hp'] == 0:
@@ -75,11 +94,11 @@ class Dun(discord.ui.View):
         dead = [False, False, False]
         for i in self.enemies:
             if i['hp'] <= 0:
+                dead[self.enemies.index(i)] = True
                 if i['hp'] < 0:
                     i['hp'] = 0
-                dead[self.enemies.index(i)] = True
 
-        if any(dead):
+        if not all(dead):
             for i in self.enemies:
 
                 if i['hp'] > 0:
@@ -101,7 +120,7 @@ class Dun(discord.ui.View):
                         await self.stop()
 
                         await interaction.response.edit_message(
-                            embed=game_loose(self.enemies[self.curr], log, self.author),
+                            embed=game_loose(self.enemies[self.curr], log, self.author, self.bot),
                             view=self)
 
                         return
@@ -113,7 +132,7 @@ class Dun(discord.ui.View):
                 for i in range(len(interaction.message.embeds[0].fields)):
                     interaction.message.embeds[0].remove_field(0)
 
-            emb = game_win(self.enemies[self.curr], log, self.stats, self.author, self.drop)
+            emb = game_win(self.enemies[self.curr], log, self.stats, self.author, self.drop, self.bot)
 
             await self.stop()
 
@@ -122,10 +141,106 @@ class Dun(discord.ui.View):
     @discord.ui.button(label="Востановление", style=discord.ButtonStyle.grey, emoji="💚", row=1)
     async def hp(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.select.disabled = False
+        log = ""
+
+        if HEAL_POTION_ID in self.stats['items']:
+
+            self.stats['hp'] += self.stats['max_hp'] / 4
+            if self.stats['hp'] > self.stats['max_hp']:
+                self.stats['hp'] = self.stats['max_hp']
+
+            self.stats['items'].remove(HEAL_POTION_ID)
+            temp = self.bot.users_db.find_one({"_id": self.author.id})['inventory']
+            temp.remove(HEAL_POTION_ID)
+
+            self.bot.users_db.update_one({"_id": self.author.id}, {"$set": {"inventory": temp}})
+
+            log += f"Вы востановили {self.stats['max_hp'] / 4} хп\n"
+
+            if random.randint(1, 5) == 1:
+                dmg_bonus = dmg_randomer(self.enemies[self.curr]['damage'])
+                self.fight(self.enemies[self.curr]['damage'] + dmg_bonus, self.stats)
+                log += f"Притивнику удалось нанести вам {self.enemies[self.curr]['damage'] + dmg_bonus:.2f} урона\n"
+
+                if self.stats['hp'] <= 0:
+                    await self.stop()
+
+                    await interaction.response.edit_message(
+                        embed=game_loose(self.enemies[self.curr], log, self.author, self.bot), view=self)
+
+
+
+            else:
+                log += "Притивнику не удалось ударить вас\n"
+
+            self.interaction = await interaction.response.edit_message(
+                embed=game_emb(self.stats, self.enemies[self.curr], log),
+                view=self)
+
+            return
+
+        log += "У вас нет зелья жизни\n"
+
+        if random.randint(1, 5) == 1:
+            dmg_bonus = dmg_randomer(self.enemies[self.curr]['damage'])
+            self.fight(self.enemies[self.curr]['damage'] + dmg_bonus, self.stats)
+            log += f"Пока вы лазили по сумке, противник нанёс {self.enemies[self.curr]['damage'] + dmg_bonus:.2f} урона\n"
+
+            if self.stats['hp'] <= 0:
+                await self.stop()
+                await interaction.response.edit_message(
+                    embed=game_loose(self.enemies[self.curr], log, self.author, self.bot),
+                    view=self)
+
+                return
+
+        else:
+            log += "Противнику не удалось ударить вас\n"
+
+        emb = game_emb(self.stats, self.enemies[self.curr], log)
+
+        self.interaction = await interaction.response.edit_message(embed=emb, view=self)
+        return
 
     @discord.ui.button(label="Убежать", style=discord.ButtonStyle.grey, emoji="🚪", row=1)
     async def run(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.select.disabled = False
+
+        if 1 < random.randint(1, 100) < 25 + self.stats['luck']:
+            self.attack.disabled = True
+            self.run.disabled = True
+            self.hp.disabled = True
+
+            log = "Вам удалось спастись\n"
+            await self.stop()
+
+            self.interaction = await interaction.response.edit_message(
+                embed=game_run(self.enemies[self.curr], log, self.author, self.bot),
+                view=self)
+            return
+        if random.randint(1, 3) == 1:
+            dmg_bonus = + dmg_randomer(self.enemies[self.curr]['damage'])
+            self.fight(self.enemies[self.curr]['damage'] * 2 + dmg_bonus, self.stats)
+
+            log = f"Пока вы пытались убежать противник ударил вас в спину, нанеся {self.enemies[self.curr]['damage'] * 2 + dmg_bonus:.2f} урона\n"
+
+        else:
+            dmg_bonus = + dmg_randomer(self.enemies[self.curr]['damage'])
+            self.fight(self.enemies[self.curr]['damage'] + dmg_bonus, self.stats)
+            log = f"Вам не удалось сбежать, враг нанёс вам {self.enemies[self.curr]['damage'] + dmg_bonus:.2f} урона\n"
+
+        if self.stats['hp'] <= 0:
+            log += "Вы погибли\n"
+
+            await self.stop()
+            await interaction.response.edit_message(
+                embed=game_loose(self.enemies[self.curr], log, self.author, self.bot),
+                view=self)
+            return
+
+        self.interaction = await interaction.response.edit_message(
+            embed=game_emb(self.stats, self.enemies[self.curr], log)
+        )
 
     async def on_timeout(self) -> None:
         if self.game_end:
@@ -228,5 +343,5 @@ class Dungeon(commands.Cog):
 
 
 async def setup(client):
-    pass
-    # await client.add_cog(Dungeon(client))
+    # pass
+    await client.add_cog(Dungeon(client))

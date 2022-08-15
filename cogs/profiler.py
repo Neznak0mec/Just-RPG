@@ -182,7 +182,7 @@ class Up_Skills(discord.ui.View):
         emb.add_field(name="Опыт", value=str(round(us['exp'])) + '\\' + str(round(us['exp_to_lvl'])), inline=True)
         emb.add_field(name="Балланс", value=f"<:silver:997889161484828826> : {us['cash']}", inline=True)
         emb.add_field(name="Очки навыков", value=f"{stats['skill_points']}", inline=True)
-        emb.add_field(name="Статы", value=f"<:health:997889169567260714> : {stats['heal']} | "
+        emb.add_field(name="Статы", value=f"<:health:997889169567260714> : {stats['hp']} | "
                                           f"<:strength:997889205684420718> : {stats['damage']} | "
                                           f"<:armor:997889166673186987> : {stats['defence']} \n"
                                           f"<:dexterity:997889168216694854> : {stats['speed']} | "
@@ -261,7 +261,7 @@ class Inventory(discord.ui.View):
         emb.add_field(name="Опыт", value=str(round(us['exp'])) + '\\' + str(round(us['exp_to_lvl'])), inline=True)
         emb.add_field(name="Балланс", value=f"<:silver:997889161484828826> : {us['cash']}", inline=True)
         emb.add_field(name="Очки навыков", value=f"{stats['skill_points']}", inline=True)
-        emb.add_field(name="Статы", value=f"<:health:997889169567260714> : {stats['heal']} | "
+        emb.add_field(name="Статы", value=f"<:health:997889169567260714> : {stats['hp']} | "
                                           f"<:strength:997889205684420718> : {stats['damage']} | "
                                           f"<:armor:997889166673186987> : {stats['defence']} \n"
                                           f"<:dexterity:997889168216694854> : {stats['speed']} | "
@@ -281,7 +281,16 @@ class Inventory(discord.ui.View):
 
         us = self.bot.users_db.find_one({"_id": self.member.id})
 
-        emb = discord.Embed(title=f"Экипировка {self.member.name}", description="")
+        emb = discord.Embed(title=f"Экипировка {self.member.name}",
+                            description="Уровень навыка не может привышать уровень персонажа\n"
+                                        "<:health:997889169567260714> - увеличивается только за счёт экипировки\n"
+                                        "<:strength:997889205684420718> - наносимый урон\n"
+                                        "<:armor:997889166673186987> - принимают на себя весь урон с его частичным уменьшением\n"
+                                        "<:dexterity:997889168216694854> - увиличивает вероятность укланения\n"
+                                        "<:luck:997889165221957642> - увеличивает получаемый опыт и монеты\n"
+                                        "<:crit:997889163552628757> - вероятность критического удара")
+
+
 
         if us['equipment']['helmet'] is None:
             emb.add_field(name="Шлем", value="Не надето", inline=True)
@@ -427,7 +436,7 @@ class Profiler(commands.Cog):
         emb.add_field(name="Опыт", value=str(round(us['exp'])) + '\\' + str(round(us['exp_to_lvl'])), inline=True)
         emb.add_field(name="Балланс", value=f"<:silver:997889161484828826> : {us['cash']}", inline=True)
         emb.add_field(name="Очки навыков", value=f"{stats['skill_points']}", inline=True)
-        emb.add_field(name="Статы", value=f"<:health:997889169567260714> : {stats['heal']} | "
+        emb.add_field(name="Статы", value=f"<:health:997889169567260714> : {stats['hp']} | "
                                           f"<:strength:997889205684420718> : {stats['damage']} | "
                                           f"<:armor:997889166673186987> : {stats['defence']} \n"
                                           f"<:dexterity:997889168216694854> : {stats['speed']} | "

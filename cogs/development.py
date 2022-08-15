@@ -4,6 +4,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from modules import checker
+
 
 def check(author, channel):
     def inner_check(message):
@@ -17,7 +19,14 @@ class Devel(commands.Cog):
         self.bot = bot
 
     async def cog_check(self, ctx) -> bool:
-        return ctx.guild.id == 568790989842791424
+        if ctx.author.id == self.bot.owner_id:
+            return True
+        else:
+            await ctx.channel.send(
+                    embed=checker.err_embed("Это техническая комманда, у вас недостаточно прав для её использования"),
+                    delete_after=15)
+            return False
+
 
     @app_commands.command(name="add_loc")
     async def add_loc(self, interaction: discord.Interaction, lvl: int, name: str, monsters: str, urls: str,
@@ -212,7 +221,25 @@ class Devel(commands.Cog):
 
         await interaction.response.send_message(f"Изображение добавлено для {id}")
 
+    @app_commands.command(name="upd")
+    async def upd(self, interaction: discord.Interaction):
+        # change key from heal to hp
+        self.bot.users_db.update_many({}, {"$rename": {"heal": "hp"}})
+
+        self.bot.info_db.update_many({"type": "helet"}, {"$rename": {"helet": "helmet"}})
+
+        # self.bot.items_db.update_many({}, {"$set": {"give_stats": {
+        #     "hp": 0,
+        #     "damage": 0,
+        #     "defence": 0,
+        #     "luck": 0,
+        #     "speed": 0
+        # }}})
+        # # remove key from items
+        # self.bot.items_db.update_many({}, {"$unset": {"hp": "", "damage": "", "defence": "", "luck": "", "speed": ""}})
+        await interaction.response.send_message("Обновлено")
+
 
 async def setup(client):
-    await client.add_cog(Devel(client))
+    # await client.add_cog(Devel(client))
     pass

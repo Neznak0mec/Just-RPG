@@ -7,6 +7,8 @@ from discord.ext import commands
 from modules import checker
 from cogs.profiler import lvl_up
 
+HEAL_POTION_ID = "fb75ff73-1116-4e95-ae46-8075c4e9a782"
+
 
 def dmg_randomer(dmg):
     proc = dmg / 5 * 100
@@ -173,7 +175,7 @@ def game_win(mob, log, stats, author, drop, bot):
     log += f"Вы победили\nВ качестве награды вы получили exp - {exp} и монет - {coins}\n"
 
     emb = discord.Embed(title=f"Победа", description="\u200b")
-    if lvl_up(bot,author):
+    if lvl_up(bot, author):
         log += f"Вы получили новый уровень\n"
     emb.add_field(name="Логи", value=log, inline=False)
     emb.set_thumbnail(url=mob['url'])
@@ -281,43 +283,39 @@ class DungeonView(discord.ui.View):
 
         log = ""
 
-        for i in self.stats['items']:
-            if i['_id'] == 'fb75ff73-1116-4e95-ae46-8075c4e9a782':
+        if HEAL_POTION_ID in self.stats['items']:
 
-                self.stats['hp'] += self.max_hp / 4
-                if self.stats['hp'] > self.max_hp:
-                    self.stats['hp'] = self.max_hp
+            self.stats['hp'] += self.max_hp / 4
+            if self.stats['hp'] > self.max_hp:
+                self.stats['hp'] = self.max_hp
 
-                self.stats['items'].remove(i)
-                # remove item from user's inventory
-                temp = self.bot.users_db.find_one({"_id": self.author.id})['inventory']
-                for r in temp:
-                    if r == 'fb75ff73-1116-4e95-ae46-8075c4e9a782':
-                        temp.remove(r)
-                        self.bot.users_db.update_one({"_id": self.author.id}, {"$set": {"inventory": temp}})
+            self.stats['items'].remove(HEAL_POTION_ID)
 
-                log += f"Вы востановили {self.max_hp / 4} хп\n"
+            temp = self.bot.users_db.find_one({"_id": self.author.id})['inventory'].remove(HEAL_POTION_ID)
+            self.bot.users_db.update_one({"_id": self.author.id}, {"$set": {"inventory": temp}})
 
-                if random.randint(1, 4) == 1:
-                    dmg_bonus = dmg_randomer(self.mob['damage'])
-                    fight(self.mob['damage'] + dmg_bonus, self.stats)
-                    log += f"Притивнику удалось нанести вам {self.mob['damage'] + dmg_bonus:.2f} урона\n"
+            log += f"Вы востановили {self.max_hp / 4} хп\n"
 
-                    if self.stats['hp'] <= 0:
-                        await self.stop()
+            if random.randint(1, 5) == 1:
+                dmg_bonus = dmg_randomer(self.mob['damage'])
+                fight(self.mob['damage'] + dmg_bonus, self.stats)
+                log += f"Притивнику удалось нанести вам {self.mob['damage'] + dmg_bonus:.2f} урона\n"
 
-                        await interaction.response.edit_message(
-                            embed=game_loose(self.mob, log, self.author, self.bot), view=self)
+                if self.stats['hp'] <= 0:
+                    await self.stop()
+
+                    await interaction.response.edit_message(
+                        embed=game_loose(self.mob, log, self.author, self.bot), view=self)
 
 
 
-                else:
-                    log += "Притивнику не удалось ударить вас\n"
+            else:
+                log += "Притивнику не удалось ударить вас\n"
 
-                self.interaction = await interaction.response.edit_message(embed=game_emb(self.stats, self.mob, log),
-                                                                           view=self)
+            self.interaction = await interaction.response.edit_message(embed=game_emb(self.stats, self.mob, log),
+                                                                       view=self)
 
-                return
+            return
 
         log += "У вас нет зелья жизни\n"
 
