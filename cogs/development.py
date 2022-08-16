@@ -23,10 +23,9 @@ class Devel(commands.Cog):
             return True
         else:
             await ctx.channel.send(
-                    embed=checker.err_embed("Это техническая комманда, у вас недостаточно прав для её использования"),
-                    delete_after=15)
+                embed=checker.err_embed("Это техническая комманда, у вас недостаточно прав для её использования"),
+                delete_after=15)
             return False
-
 
     @app_commands.command(name="add_loc")
     async def add_loc(self, interaction: discord.Interaction, lvl: int, name: str, monsters: str, urls: str,
@@ -225,7 +224,7 @@ class Devel(commands.Cog):
     async def upd(self, interaction: discord.Interaction):
         # change key from heal to hp
         self.bot.users_db.update_many({}, {"$rename": {"heal": "hp"}})
-
+        self.bot.users_db.update_many({}, {"$rename": {"equipment.helet": "helmet"}})
         self.bot.info_db.update_many({"type": "helet"}, {"$rename": {"helet": "helmet"}})
 
         # self.bot.items_db.update_many({}, {"$set": {"give_stats": {
@@ -241,5 +240,5 @@ class Devel(commands.Cog):
 
 
 async def setup(client):
-    # await client.add_cog(Devel(client))
-    pass
+    await client.add_cog(Devel(client))
+    # pass
