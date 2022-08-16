@@ -16,7 +16,8 @@ mob = {
 }
 
 
-async def generate_enemy(bot, name, lvl, url):
+def generate_enemy(bot, name, lvl, url) -> dict:
+    lvl += random.randint(1, 3)
     points = lvl * 3
     enemy = mob.copy()
     enemy['name'] = name
@@ -38,3 +39,5 @@ async def generate_enemy(bot, name, lvl, url):
 
 
 # loot generator
+def generate_loot(bot,name,lvl):
+    return

@@ -4,9 +4,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-
 from cogs.adventure import dmg_randomer, stats_calc, game_emb, game_run, game_win, game_loose
-
+from modules.generator import generate_enemy
 
 HEAL_POTION_ID = "fb75ff73-1116-4e95-ae46-8075c4e9a782"
 
@@ -296,47 +295,11 @@ class Dungeon(commands.Cog):
 
     @app_commands.command(name="dungeon")
     async def dungeon(self, interaction: discord.Interaction):
-        mob = {
-            "name": "uwu",
-            "lvl": 1,
-            'hp': 20,
-            'damage': 1,
-            'defence': None,
-            'max_def': None,
-            'max_hp': 40,
-            'speed': 0,
-            'luck': 0,
-            'krit': 0,
-            "url": "https://bots.server-discord.com/img/testback.png"
-        }
-        mob2 = {
-            "name": "ywy",
-            "lvl": 1,
-            'hp': 30,
-            'damage': 1,
-            'defence': None,
-            'max_def': None,
-            'max_hp': 40,
-            'speed': 0,
-            'luck': 0,
-            'krit': 0,
-            "url": "https://bots.server-discord.com/img/testback.png"
-        }
-        mob3 = {
-            "name": "owo",
-            "lvl": 1,
-            'hp': 40,
-            'damage': 1,
-            'defence': None,
-            'max_def': None,
-            'max_hp': 40,
-            'speed': 0,
-            'luck': 0,
-            'krit': 0,
-            "url": "https://bots.server-discord.com/img/testback.png"
-        }
+        mob1 = generate_enemy(self.bot, "Тестовый моб 1", 1, "https://bots.server-discord.com/img/testback.png")
+        mob2 = generate_enemy(self.bot, "Тестовый моб 2", 1, "https://bots.server-discord.com/img/testback.png")
+        mob3 = generate_enemy(self.bot, "Тестовый моб 3", 1, "https://bots.server-discord.com/img/testback.png")
 
-        enemy = [mob, mob2, mob3]
+        enemy = [mob1, mob2, mob3]
         us_stats = stats_calc(self.bot, interaction.user)
         view = Dun(self.bot, interaction.user, interaction, enemy, us_stats)
         await interaction.response.send_message(embed=game_emb(us_stats, enemy[0]), view=view)
