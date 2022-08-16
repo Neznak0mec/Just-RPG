@@ -180,7 +180,7 @@ class Up_Skills(discord.ui.View):
         emb = discord.Embed(title=f"Профиль {interaction.user.name}", description="")
         emb.add_field(name="Уровень", value=us['lvl'], inline=False)
         emb.add_field(name="Опыт", value=str(round(us['exp'])) + '\\' + str(round(us['exp_to_lvl'])), inline=True)
-        emb.add_field(name="Балланс", value=f"<:silver:997889161484828826> : {us['cash']}", inline=True)
+        emb.add_field(name="Баланс", value=f"<:silver:997889161484828826> : {us['cash']}", inline=True)
         emb.add_field(name="Очки навыков", value=f"{stats['skill_points']}", inline=True)
         emb.add_field(name="Статы", value=f"<:health:997889169567260714> : {stats['hp']} | "
                                           f"<:strength:997889205684420718> : {stats['damage']} | "
@@ -259,7 +259,7 @@ class Inventory(discord.ui.View):
         emb = discord.Embed(title=f"Профиль {self.member.name}", description="")
         emb.add_field(name="Уровень", value=us['lvl'], inline=False)
         emb.add_field(name="Опыт", value=str(round(us['exp'])) + '\\' + str(round(us['exp_to_lvl'])), inline=True)
-        emb.add_field(name="Балланс", value=f"<:silver:997889161484828826> : {us['cash']}", inline=True)
+        emb.add_field(name="Баланс", value=f"<:silver:997889161484828826> : {us['cash']}", inline=True)
         emb.add_field(name="Очки навыков", value=f"{stats['skill_points']}", inline=True)
         emb.add_field(name="Статы", value=f"<:health:997889169567260714> : {stats['hp']} | "
                                           f"<:strength:997889205684420718> : {stats['damage']} | "
@@ -434,7 +434,7 @@ class Profiler(commands.Cog):
         emb = discord.Embed(title=f"Профиль {member.name}", description="")
         emb.add_field(name="Уровень", value=us['lvl'], inline=False)
         emb.add_field(name="Опыт", value=str(round(us['exp'])) + '\\' + str(round(us['exp_to_lvl'])), inline=True)
-        emb.add_field(name="Балланс", value=f"<:silver:997889161484828826> : {us['cash']}", inline=True)
+        emb.add_field(name="Баланс", value=f"<:silver:997889161484828826> : {us['cash']}", inline=True)
         emb.add_field(name="Очки навыков", value=f"{stats['skill_points']}", inline=True)
         emb.add_field(name="Статы", value=f"<:health:997889169567260714> : {stats['hp']} | "
                                           f"<:strength:997889205684420718> : {stats['damage']} | "
@@ -568,7 +568,7 @@ class Profiler(commands.Cog):
         if rand == 1:
 
             emb = discord.Embed(title=f'**Городской патруль:**',
-                                description=f'*Вы помогли городской стражи, отстояв за них на посту некоторое время.\n'
+                                description=f'*Вы помогли городской страже, отстояв за них на посту некоторое время.\n'
                                             f'Награда: {exp} exp и {cash} монет*')
             emb.set_thumbnail(url="https://cdn.discordapp.com/attachments/939111963559088200/1006659882470080552/"
                                   "Neznakomec_night_medieval_city_patrol_with_two_other_guards_fro_ff05944e-dd3d-4e2e"

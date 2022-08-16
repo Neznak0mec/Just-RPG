@@ -278,7 +278,7 @@ class DungeonView(discord.ui.View):
 
         await interaction.response.edit_message(embed=emb, view=self)
 
-    @discord.ui.button(label="Востановление", style=discord.ButtonStyle.grey, emoji="💚")
+    @discord.ui.button(label="Восстановление", style=discord.ButtonStyle.grey, emoji="💚")
     async def hp(self, interaction: discord.Interaction, button: discord.ui.Button):
 
         log = ""

@@ -14,9 +14,9 @@ class Dropdown(discord.ui.Select):
                                  description='Здесь вы можете купить свитки'
                                  ),
             discord.SelectOption(label='Зелья',
-                                 description='Здесь вы можете купитть зелья'
+                                 description='Здесь вы можете купить зелья'
                                  ),
-            discord.SelectOption(label='Обмундирование',
+            discord.SelectOption(label='Обмундерование',
                                  description='Здесь вы откроете меню обмундерования'
                                  ),
         ]
