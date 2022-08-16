@@ -15,6 +15,25 @@ mob = {
     "url": None
 }
 
+item = {"_id": None,
+        "name": None,
+        "lvl": None,
+        "type": None,
+        "price": None,
+        "description": None,
+        "rarity": None,
+        "give_stats": {
+            "hp": 0,
+            "damage": 0,
+            "defence": 0,
+            "luck": 0,
+            "speed": 0
+        },
+        "generated": True
+        }
+types = ['helmet', 'armor', 'pants', 'shoes', 'gloves', 'weapon']
+rarity = ['common', 'uncommon', 'rare', 'epic', 'legendary']
+
 
 def generate_enemy(bot, name, lvl, url) -> dict:
     lvl += random.randint(1, 3)
@@ -39,5 +58,5 @@ def generate_enemy(bot, name, lvl, url) -> dict:
 
 
 # loot generator
-def generate_loot(bot,name,lvl):
+def generate_loot(bot, name, lvl):
     return
