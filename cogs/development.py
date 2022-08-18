@@ -226,6 +226,7 @@ class Devel(commands.Cog):
         self.bot.users_db.update_many({}, {"$rename": {"heal": "hp"}})
         self.bot.users_db.update_many({}, {"$rename": {"equipment.helet": "helmet"}})
         self.bot.info_db.update_many({"type": "helet"}, {"$rename": {"helet": "helmet"}})
+        self.bot.items_db.update_many({}, {"$set": {"generated": True}})
 
         # self.bot.items_db.update_many({}, {"$set": {"give_stats": {
         #     "hp": 0,

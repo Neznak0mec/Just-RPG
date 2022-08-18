@@ -46,10 +46,8 @@ def generate_enemy(bot, name, lvl, url) -> dict:
     enemy['damage'] = 3
     stats = ['damage', 'hp', 'defence']
 
-    while points > 0:
-        stat = random.choice(stats)
-        enemy[stat] += 1
-        points -= 1
+    for i in range(points):
+        enemy[random.choice(stats)] += 1
 
     enemy['max_def'] = enemy['defence']
     enemy['max_hp'] = enemy['hp']
@@ -58,5 +56,9 @@ def generate_enemy(bot, name, lvl, url) -> dict:
 
 
 # loot generator
-def generate_loot(bot, name, lvl):
+def generate_loot(bot, name, lvl, type):
+    loot = item.copy()
+    loot['name'] = name
+    loot['lvl'] = lvl
+
     return
