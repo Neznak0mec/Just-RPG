@@ -18,12 +18,12 @@ types = ['helmet', 'armor', 'pants', 'shoes', 'gloves', 'weapon']
 rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary']
 
 give_stats = {
-    "hp": 0,
-    "damage": 0,
-    "defence": 0,
-    "luck": 0,
-    "speed": 0,
-    "krit": 0
+    "hp": None,
+    "damage": None,
+    "defence": None,
+    "luck": None,
+    "speed": None,
+    "krit": None
 }
 main_stats = {
     'helmet': "hp",
@@ -33,6 +33,7 @@ main_stats = {
     'shoes': "speed",
     'gloves': "krit"
 }
+
 
 def choose_rarity() -> str:
     if random.randint(1, 10000) == 1:
@@ -49,31 +50,14 @@ def choose_rarity() -> str:
 
 def main_stat(lvl, type, rarity) -> dict:
     stat = give_stats.copy()
-    if type == 'helmet':
-        stat['hp'] += 10 * rarities.index(rarity) / 2
-        stat['hp'] *= 1 + lvl / 10
-    elif type == 'weapon':
-        stat['damage'] += 10 * rarities.index(rarity) / 2
-        stat['damage'] *= 1 + lvl / 10
-    elif type == 'armor':
-        stat['defence'] += 10 * rarities.index(rarity) / 2
-        stat['defence'] *= 1 + lvl / 10
-    elif type == 'pants':
-        stat['luck'] += 10 * rarities.index(rarity) / 2
-        stat['luck'] *= 1 + lvl / 10
-    elif type == 'shoes':
-        stat['speed'] += 10 * rarities.index(rarity) / 2
-        stat['speed'] *= 1 + lvl / 10
-    elif type == 'gloves':
-        stat['krit'] += 10 * rarities.index(rarity) / 2
-        stat['krit'] *= 1 + lvl / 10
-    print(stat)
+    stat[main_stats[type]] = lvl * (rarities.index(rarity)+1) * 2
+    print(lvl * rarities.index(rarity) * 2)
     return stat
 
 
 def select_preset(lvl, rarity) -> list[str, dict]:
     mydict = None
-    with open('json/presetts.json', 'r') as f:
+    with open('json/presetts.json', 'r', encoding='utf-8') as f:
         mydict = json.load(f)
 
     preset = random.choice(list(mydict.keys()))
@@ -88,6 +72,8 @@ def select_preset(lvl, rarity) -> list[str, dict]:
 
 def add_stats(stats_1, stats_2):
     for i in stats_2.keys():
+        if stats_1[i] is None:
+            stats_1[i] = 0
         stats_1[i] += stats_2[i]
     return stats_1
 
@@ -107,7 +93,6 @@ def generate_loot(bot, name, lvl, type):
     loot['preset'] = preset[0]
 
     loot['give_stats'] = add_stats(main_stat(lvl, type, rarity), preset[1])
-
 
     print(loot)
     return
