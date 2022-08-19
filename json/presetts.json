@@ -1,0 +1,34 @@
+{
+  "": {
+    "hp": 0,
+    "damage": 0,
+    "defence": 0,
+    "luck": 0,
+    "speed": 0,
+    "krit": 0
+  },
+    "атлета": {
+        "hp": 0,
+        "damage": 0,
+        "defence": 0,
+        "luck": 0,
+        "speed": 12,
+        "krit": 0
+    },
+  "везунчика": {
+    "hp": 0,
+    "damage": 0,
+    "defence": 0,
+    "luck": 7,
+    "speed": 0,
+    "krit": 0
+  },
+    "дохляка": {
+        "hp": -5,
+        "damage": 0,
+        "defence": 0,
+        "luck": 0,
+        "speed": 0,
+        "krit": 0
+    }
+}

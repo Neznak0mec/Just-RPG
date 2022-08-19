@@ -5,6 +5,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from modules import checker
+from modules.generator import generate_loot
 
 
 def check(author, channel):
@@ -238,6 +239,17 @@ class Devel(commands.Cog):
         # # remove key from items
         # self.bot.items_db.update_many({}, {"$unset": {"hp": "", "damage": "", "defence": "", "luck": "", "speed": ""}})
         await interaction.response.send_message("Обновлено")
+
+    @app_commands.command(name="test_loot_generator")
+    @app_commands.choices(stat=[app_commands.Choice(name="helmet", value="helmet"),
+                                app_commands.Choice(name="armor", value="armor"),
+                                app_commands.Choice(name="pants", value="pants"),
+                                app_commands.Choice(name="shoes", value="shoes"),
+                                app_commands.Choice(name="gloves", value="gloves"),
+                                app_commands.Choice(name="weapon", value="weapon")])
+    async def test_loot_generator(self, interaction: discord.Interaction, stat: str, name: str, lvl: int):
+        generate_loot(self.bot, name=name, lvl=lvl, type=stat)
+        await interaction.response.send_message("Смотри консоль")
 
 
 async def setup(client):
