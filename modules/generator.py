@@ -1,6 +1,7 @@
 # enemy generator
 import random
 import json
+import uuid
 
 item = {"_id": None,
         "name": None,
@@ -51,7 +52,6 @@ def choose_rarity() -> str:
 def main_stat(lvl, type, rarity) -> dict:
     stat = give_stats.copy()
     stat[main_stats[type]] = lvl * (rarities.index(rarity)+1) * 2
-    print(lvl * rarities.index(rarity) * 2)
     return stat
 
 
@@ -79,13 +79,15 @@ def add_stats(stats_1, stats_2):
 
 
 # loot generator
-def generate_loot(bot, name, lvl, type):
+def generate_loot(bot, name, lvl, type) -> str:
     rarity = choose_rarity()
     preset = select_preset(lvl, rarity)
     if bot.info_db.count_documents({"name": name, "lvl": lvl, "presset": preset[0]}) != 0:
-        return
+        loot = bot.info_db.find_one({"name": name, "lvl": lvl, "presset": preset[0]})
+        return f"{loot['name']} {loot['preset']}"
 
     loot = item.copy()
+    loot['_id'] = uuid.uuid4()
     loot['name'] = name
     loot['lvl'] = lvl
     loot['type'] = type
@@ -94,5 +96,5 @@ def generate_loot(bot, name, lvl, type):
 
     loot['give_stats'] = add_stats(main_stat(lvl, type, rarity), preset[1])
 
-    print(loot)
-    return
+    bot.info_db.insert_one(loot)
+    return f"{loot['name']} {loot['preset']}"
