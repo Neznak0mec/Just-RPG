@@ -34,7 +34,6 @@ main_stats = {
     'gloves': "krit"
 }
 
-# todo: не работает где-то -_-
 def choose_rarity() -> str:
     if random.randint(1, 10000) == 1:
         return 'legendary'
@@ -50,8 +49,25 @@ def choose_rarity() -> str:
 
 def main_stat(lvl, type, rarity) -> dict:
     stat = give_stats.copy()
-    stat[main_stats[type]] = 10 * rarities.index(rarity) / 2
-    stat[main_stats[type]] *= 1 + lvl / 10
+    if type == 'helmet':
+        stat['hp'] += 10 * rarities.index(rarity) / 2
+        stat['hp'] *= 1 + lvl / 10
+    elif type == 'weapon':
+        stat['damage'] += 10 * rarities.index(rarity) / 2
+        stat['damage'] *= 1 + lvl / 10
+    elif type == 'armor':
+        stat['defence'] += 10 * rarities.index(rarity) / 2
+        stat['defence'] *= 1 + lvl / 10
+    elif type == 'pants':
+        stat['luck'] += 10 * rarities.index(rarity) / 2
+        stat['luck'] *= 1 + lvl / 10
+    elif type == 'shoes':
+        stat['speed'] += 10 * rarities.index(rarity) / 2
+        stat['speed'] *= 1 + lvl / 10
+    elif type == 'gloves':
+        stat['krit'] += 10 * rarities.index(rarity) / 2
+        stat['krit'] *= 1 + lvl / 10
+    print(stat)
     return stat
 
 
@@ -71,7 +87,7 @@ def select_preset(lvl, rarity) -> list[str, dict]:
 
 
 def add_stats(stats_1, stats_2):
-    for i in stats_2:
+    for i in stats_2.keys():
         stats_1[i] += stats_2[i]
     return stats_1
 
