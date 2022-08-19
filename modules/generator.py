@@ -75,6 +75,7 @@ def add_stats(stats_1, stats_2):
         if stats_1[i] is None:
             stats_1[i] = 0
         stats_1[i] += stats_2[i]
+        stats_1[i] = int(stats_1[i])
     return stats_1
 
 
