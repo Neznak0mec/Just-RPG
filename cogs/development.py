@@ -28,7 +28,7 @@ class Devel(commands.Cog):
                 delete_after=15)
             return False
 
-    @app_commands.command(name="add_loc")
+    @app_commands.command(name="add_loc_adventure")
     async def add_loc(self, interaction: discord.Interaction, lvl: int, name: str, monsters: str, urls: str,
                       description: str):
         if len(monsters) != len(urls):
@@ -56,7 +56,7 @@ class Devel(commands.Cog):
 
         await interaction.response.send_message("Локация добавлена")
 
-    @app_commands.command(name="rem_loc")
+    @app_commands.command(name="rem_loc_adventure")
     async def rem_loc(self, interaction: discord.Interaction, name: str):
 
         self.bot.info_db.update_one({"_id": "locations"}, {"$pull": {"locations": {"name": name}}})
@@ -184,7 +184,7 @@ class Devel(commands.Cog):
         self.bot.users_db.update_one({"_id": interaction.user.id}, {"$pull": {"inventory": item}})
         await interaction.response.send_message(f"Предмет `{item['_id']}` удален из инвентаря {user.id}")
 
-    @app_commands.command(name="add_drop")
+    @app_commands.command(name="add_drop_adventure")
     async def add_drop(self, interaction: discord.Interaction, dungeon: str, item_id: str, chance: int):
         dungeons = self.bot.info_db.find_one({"_id": 'locations'})['loks'] or None
         counter = 0
@@ -221,25 +221,6 @@ class Devel(commands.Cog):
 
         await interaction.response.send_message(f"Изображение добавлено для {id}")
 
-    @app_commands.command(name="upd")
-    async def upd(self, interaction: discord.Interaction):
-        # change key from heal to hp
-        self.bot.users_db.update_many({}, {"$rename": {"heal": "hp"}})
-        self.bot.users_db.update_many({}, {"$rename": {"equipment.helet": "helmet"}})
-        self.bot.info_db.update_many({"type": "helet"}, {"$rename": {"helet": "helmet"}})
-        self.bot.items_db.update_many({}, {"$set": {"generated": True}})
-
-        # self.bot.items_db.update_many({}, {"$set": {"give_stats": {
-        #     "hp": 0,
-        #     "damage": 0,
-        #     "defence": 0,
-        #     "luck": 0,
-        #     "speed": 0
-        # }}})
-        # # remove key from items
-        # self.bot.items_db.update_many({}, {"$unset": {"hp": "", "damage": "", "defence": "", "luck": "", "speed": ""}})
-        await interaction.response.send_message("Обновлено")
-
     @app_commands.command(name="test_loot_generator")
     @app_commands.choices(stat=[app_commands.Choice(name="helmet", value="helmet"),
                                 app_commands.Choice(name="armor", value="armor"),
@@ -250,6 +231,88 @@ class Devel(commands.Cog):
     async def test_loot_generator(self, interaction: discord.Interaction, stat: str, name: str, lvl: int):
         generate_loot(self.bot, name=name, lvl=lvl, type=stat)
         await interaction.response.send_message("Смотри консоль")
+
+    @app_commands.command(name="add_dungeon")
+    async def add_loc(self, interaction: discord.Interaction, lvl: int, name: str,
+                      description: str):
+        post = \
+            {
+                "lvl": lvl,
+                "name": name,
+                "monsters": {},
+                "drop": {},
+                "description": description,
+            }
+
+        self.bot.info_db.update_one({"_id": "locations"}, {"$push": {"dungeons": post}})
+
+        await interaction.response.send_message("Данж создан")
+
+    @app_commands.command(name="add_monster_to_dungeon")
+    async def add_monster(self, interaction: discord.Interaction, dungeon: str, name: str, url: str):
+        dungeons = self.bot.info_db.find_one({"_id": 'locations'})['dungeons'] or None
+        counter = 0
+        for i in dungeons:
+            if i['name'].lower() == dungeon.lower():
+                dungeon = i
+                break
+            counter += 1
+
+        if dungeon is str:
+            await interaction.response.send_message("Данной локации не существует")
+            return
+
+        monsters = dungeon['monsters']
+        monsters[name] = url
+        self.bot.info_db.update_one({"_id": "locations"},
+                                    {"$set": {"dungeons." + str(counter) + ".monsters": monsters}})
+
+        await interaction.response.send_message(f"{name} добвлен на локацию {dungeon['name']}")
+
+    @app_commands.command(name="add_drop_to_dungeon")
+    @app_commands.choices(type=[app_commands.Choice(name="helmet", value="helmet"),
+                                app_commands.Choice(name="armor", value="armor"),
+                                app_commands.Choice(name="pants", value="pants"),
+                                app_commands.Choice(name="shoes", value="shoes"),
+                                app_commands.Choice(name="gloves", value="gloves"),
+                                app_commands.Choice(name="weapon", value="weapon")])
+    async def add_drop(self, interaction: discord.Interaction, dungeon: str, type: str, name: str):
+        dungeons = self.bot.info_db.find_one({"_id": 'locations'})['dungeons'] or None
+        counter = 0
+        for i in dungeons:
+            if i['name'].lower() == dungeon.lower():
+                dungeon = i
+                break
+            counter += 1
+
+        if dungeon is str:
+            await interaction.response.send_message("Данной локации не существует")
+            return
+
+        self.bot.info_db.update_one({"_id": "locations"},
+                                    {"$set": {"dungeons." + str(counter) + ".drop." + type: name}})
+
+        await interaction.response.send_message(f"{name} добвлен на локацию {dungeon['name']}")
+
+    @app_commands.command(name="upd")
+    async def upd(self, interaction: discord.Interaction):
+        # change key from heal to hp
+        self.bot.users_db.update_many({}, {"$rename": {"heal": "hp"}})
+        self.bot.info_db.update_many({"type": "helet"}, {"$rename": {"helet": "helmet"}})
+        self.bot.items_db.update_many({}, {"$set": {"generated": True}})
+        users = self.bot.users_db.find()
+        for i in users:
+            stats = {
+                "helmet": i['equipment']['helem'],
+                "armor": i['equipment']['armor'],
+                "pants": i['equipment']['pants'],
+                "shoes": i['equipment']['shoes'],
+                "gloves": i['equipment']['gloves'],
+                "weapon": i['equipment']['weapon']
+            }
+            self.bot.users_db.update_one({"_id": i["_id"]}, {"$set": {"equipment": stats}})
+
+        await interaction.response.send_message("Обновлено")
 
 
 async def setup(client):

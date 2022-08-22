@@ -281,16 +281,7 @@ class Inventory(discord.ui.View):
 
         us = self.bot.users_db.find_one({"_id": self.member.id})
 
-        emb = discord.Embed(title=f"Экипировка {self.member.name}",
-                            description="Уровень навыка не может привышать уровень персонажа\n"
-                                        "<:health:997889169567260714> - увеличивается только за счёт экипировки\n"
-                                        "<:strength:997889205684420718> - наносимый урон\n"
-                                        "<:armor:997889166673186987> - принимают на себя весь урон с его частичным уменьшением\n"
-                                        "<:dexterity:997889168216694854> - увиличивает вероятность укланения\n"
-                                        "<:luck:997889165221957642> - увеличивает получаемый опыт и монеты\n"
-                                        "<:crit:997889163552628757> - вероятность критического удара")
-
-
+        emb = discord.Embed(title=f"Экипировка {self.member.name}")
 
         if us['equipment']['helmet'] is None:
             emb.add_field(name="Шлем", value="Не надето", inline=True)
@@ -355,8 +346,9 @@ class Inventory(discord.ui.View):
 
         for i in items.keys():
             item = self.bot.items_db.find_one({"_id": i})
+            desc = item['description'] or "----"
             emb.add_field(name=f"id: {counter}|{item['lvl']}lvl - {item['name']} x {items[i]}шт",
-                          value=item['description'],
+                          value=desc,
                           inline=False)
             counter += 1
 
@@ -367,7 +359,13 @@ class Inventory(discord.ui.View):
     @discord.ui.button(label="Прокачать навыки", style=discord.ButtonStyle.blurple, row=1,
                        emoji='<:lvl_up:1006270950989365318>')
     async def lvl(self, interaction: discord.Interaction, button: discord.ui.Button):
-        emb = discord.Embed(title="Прокачка навыков", description="Выберите навык")
+        emb = discord.Embed(title="Прокачка навыков", description="Уровень навыка не может привышать уровень персонажа\n"
+                                        "<:health:997889169567260714> - увеличивается только за счёт экипировки\n"
+                                        "<:strength:997889205684420718> - наносимый урон\n"
+                                        "<:armor:997889166673186987> - принимают на себя весь урон с его частичным уменьшением\n"
+                                        "<:dexterity:997889168216694854> - увиличивает вероятность укланения\n"
+                                        "<:luck:997889165221957642> - увеличивает получаемый опыт и монеты\n"
+                                        "<:crit:997889163552628757> - вероятность критического удара")
         await interaction.response.edit_message(embed=emb, view=Up_Skills(interaction.user, self.bot))
 
     async def on_timeout(self) -> None:
@@ -483,12 +481,13 @@ class Profiler(commands.Cog):
                         await interaction.response.send_message(embed=checker.emp_embed(f"Вы одели {item['name']}"))
                         return
                     else:
-                        unek = self.bot.users_db.find_one({"_id": interaction.user.id})['equipment'][item['type']]
+                        unek = us['equipment'][item['type']]
                         info = self.bot.items_db.find_one({"_id": unek})
 
                         self.bot.users_db.update_one({"_id": interaction.user.id},
                                                      {"$set": {"equipment." + item['type']: i}})
-                        us['inventory'].remove(i).append(unek)
+                        us['inventory'].remove(i)
+                        us['inventory'].append(unek)
 
                         self.bot.users_db.update_one({"_id": interaction.user.id},
                                                      {"$set": {"inventory": us['inventory']}})

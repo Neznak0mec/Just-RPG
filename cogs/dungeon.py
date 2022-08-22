@@ -5,16 +5,12 @@ from discord import app_commands
 from discord.ext import commands
 
 from cogs.profiler import lvl_up
+from modules import checker
 
 from modules.classes import Player, Enemy
+from modules.generator import generate_loot
 
 HEAL_POTION_ID = "fb75ff73-1116-4e95-ae46-8075c4e9a782"
-
-'''
-шо ещё надо делать (todo кароч):
-1. рандомный дроп
-3. удаление вещи из бд с вещами если ни у кого из пользователей данного предмета нет
-'''
 
 
 def game_emb(player: Player, enemy: Enemy, log):
@@ -53,13 +49,18 @@ def game_loose(mob: Enemy, log, author, bot):
     return emb
 
 
-def game_win(mob: Enemy, log, player: Player, author, bot):
+def game_win(mob: Enemy, log, player: Player, author, bot, drop):
     exp = random.randint(mob.lvl * 3, mob.lvl * 5) + random.randint(0, 7 * player.luck)
     coins = mob.lvl * 3 + random.randint(0, 7 * player.luck)
 
     bot.users_db.update_many({"_id": author.id}, {"$inc": {"exp": exp, "cash": coins}})
 
     log += f"Вы победили\nВ качестве награды вы получили exp - {exp} и монет - {coins}\n"
+
+    droped = random.choice(list(drop.keys()))
+    loot = generate_loot(bot, drop[droped], mob.lvl, droped)
+    log += f"Вы получили {loot[0]}"
+    bot.users_db.update_one({"_id": author.id}, {"$push": {"inventory": loot[1]}})
 
     emb = discord.Embed(title=f"Победа", description="\u200b")
     if lvl_up(bot, author):
@@ -85,7 +86,7 @@ def game_run(mob: Enemy, log, author, bot):
 
 
 class Dun(discord.ui.View):
-    def __init__(self, bot, author, interaction: discord.Interaction, enemies: list[Enemy], player: Player):
+    def __init__(self, bot, author, interaction: discord.Interaction, enemies: list[Enemy], player: Player, drop: dict):
         super().__init__()
         self.bot = bot
 
@@ -95,32 +96,24 @@ class Dun(discord.ui.View):
         self.enemies = enemies
         self.curr = 0
         self.game_end = False
-        self.drop = None
+        self.drop = drop
         self.inventory = self.bot.users_db.find_one({"_id": author.id})['inventory']
         self.upd_select()
 
     def upd_select(self):
         self.select.options = []
-        self.select.add_option(label="1 - " + self.enemies[0].name,
-                               description=f"{self.enemies[0].hp / self.enemies[0].max_hp * 100:.2f}%",
-                               emoji="❤️",
-                               value="0")
+        for enemy in self.enemies:
+            if enemy.hp == 0:
+                emoji = "💀"
+            elif self.enemies.index(enemy) == self.curr:
+                emoji = "⚔️"
+            else:
+                emoji = "❤️"
 
-        self.select.add_option(label="2 - " + self.enemies[1].name,
-                               description=f"{self.enemies[1].hp / self.enemies[1].max_hp * 100:.2f}%",
-                               emoji="❤️",
-                               value="1")
-
-        self.select.add_option(label="3 - " + self.enemies[2].name,
-                               description=f"{self.enemies[2].hp / self.enemies[2].max_hp * 100:.2f}%",
-                               emoji="❤️",
-                               value="2")
-
-        for i in self.enemies:
-            if i.hp == 0:
-                self.select.options[self.enemies.index(i)].emoji = "☠️"
-            if self.enemies.index(i) == self.curr:
-                self.select.options[self.enemies.index(i)].emoji = "⚔️"
+            self.select.add_option(label=f"{self.enemies.index(enemy) + 1} - {enemy.name}",
+                                   description=f"{enemy.hp / enemy.max_hp * 100:.2f}%",
+                                   emoji=emoji,
+                                   value=f"{self.enemies.index(enemy)}")
 
     @discord.ui.select(options=[], row=0, placeholder="Выберите противника")
     async def select(self, interaction: discord.Interaction, options):
@@ -144,10 +137,12 @@ class Dun(discord.ui.View):
             damage = self.enemies[self.curr].get_damage(self.player.damage)
             log += f"Вы нанесли {damage:.2f} урона\n"
 
-        dead = [False, False, False]
+        dead = []
         for i in self.enemies:
             if i.hp <= 0:
-                dead[self.enemies.index(i)] = True
+                dead.append(True)
+            else:
+                dead.append(False)
 
         if not all(dead):
             for enemy in self.enemies:
@@ -178,7 +173,7 @@ class Dun(discord.ui.View):
 
         else:
 
-            emb = game_win(self.enemies[self.curr], log, self.player, self.author, self.bot)
+            emb = game_win(self.enemies[self.curr], log, self.player, self.author, self.bot, self.drop)
 
             await self.stop()
 
@@ -268,6 +263,12 @@ class Dun(discord.ui.View):
             embed=game_emb(self.player, self.enemies[self.curr], log)
         )
 
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.author.id:
+            await interaction.response.send_message(embed=checker.err_embed(f"Вы не участвуете в данном данже"),
+                                                    ephemeral=True)
+        return interaction.user.id == self.author.id
+
     async def on_timeout(self) -> None:
         if self.game_end:
             return
@@ -307,8 +308,53 @@ class Dun(discord.ui.View):
 
 
 class Select_dungeon(discord.ui.View):
-    def __init__(self):
+    def __init__(self, bot, author):
         super().__init__()
+        self.bot = bot
+        self.author = author
+        self.dungeon_list = []
+        self.interaction = None
+        for dungeon in self.bot.info_db.find_one({"_id": "locations"})['dungeons']:
+            self.dungeon_list.append(dungeon)
+
+        for i in self.dungeon_list:
+            self.select.add_option(label=i['name'],
+                                   description=i['description'])
+
+    @discord.ui.select(options=[], row=0, placeholder="Выберите противника")
+    async def select(self, interaction: discord.Interaction, options):
+        selected = interaction.data["values"][0]
+        for i in self.dungeon_list:
+            if i["name"] == selected:
+                selected = i
+                break
+        mobs_amount = random.randint(2, 4)
+        dungeon_mobs = selected['monsters']
+        enemies = []
+        for i in range(mobs_amount):
+            enemy = random.choice(list(dungeon_mobs.keys()))
+            enemies.append(Enemy(enemy, selected['lvl'], dungeon_mobs[enemy]))
+
+        player = Player(interaction.user, self.bot)
+        view = Dun(self.bot, interaction.user, interaction, enemies, player, selected['drop'])
+        await interaction.response.edit_message(embed=game_emb(player, enemies[0], None), view=view)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if self.interaction is None:
+            self.interaction = interaction
+
+        if interaction.user.id != self.author.id:
+            await interaction.response.send_message(embed=checker.err_embed(f"Это вы не вы собираетесь в данж"),
+                                                    ephemeral=True)
+        return interaction.user.id == self.author.id
+
+    async def on_timeout(self) -> None:
+        self.select.disabled = True
+
+        try:
+            await self.interaction.message.edit(view=self)
+        except:
+            pass
 
 
 class Dungeon(commands.Cog):
@@ -318,15 +364,9 @@ class Dungeon(commands.Cog):
 
     @app_commands.command(name="dungeon")
     async def dungeon(self, interaction: discord.Interaction):
-        mob1 = Enemy("Тестовый моб 1", 2, "https://bots.server-discord.com/img/testback.png")
-        mob2 = Enemy("Тестовый моб 2", 2, "https://bots.server-discord.com/img/testback.png")
-        mob3 = Enemy("Тестовый моб 3", 2, "https://bots.server-discord.com/img/testback.png")
-
-        player = Player(interaction.user, self.bot)
-
-        enemy = [mob1, mob2, mob3]
-        view = Dun(self.bot, interaction.user, interaction, enemy, player)
-        await interaction.response.send_message(embed=game_emb(player, enemy[0], None), view=view)
+        view = Select_dungeon(self.bot, interaction.user)
+        emb = discord.Embed(title="Выбери данж")
+        await interaction.response.send_message(embed=emb, view=view)
 
 
 async def setup(client):

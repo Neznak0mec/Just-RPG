@@ -3,15 +3,15 @@ import random
 import json
 import uuid
 
-item = {"_id": None,
-        "name": None,
-        "lvl": None,
-        "type": None,
-        "price": None,
-        "description": None,
-        "rarity": None,
-        "preset": None,
-        "give_stats": None,
+item = {"_id": "",
+        "name": "",
+        "lvl": 0,
+        "type": "",
+        "price": 1,
+        "description": "",
+        "rarity": "",
+        "preset": "",
+        "give_stats": {},
         "generated": True
         }
 
@@ -51,7 +51,7 @@ def choose_rarity() -> str:
 
 def main_stat(lvl, type, rarity) -> dict:
     stat = give_stats.copy()
-    stat[main_stats[type]] = lvl * (rarities.index(rarity)+1) * 2
+    stat[main_stats[type]] = lvl * (rarities.index(rarity) + 1) * 2
     return stat
 
 
@@ -80,7 +80,7 @@ def add_stats(stats_1, stats_2):
 
 
 # loot generator
-def generate_loot(bot, name, lvl, type) -> str:
+def generate_loot(bot, name, lvl, type) -> [str, str]:
     rarity = choose_rarity()
     preset = select_preset(lvl, rarity)
     if bot.info_db.count_documents({"name": name, "lvl": lvl, "presset": preset[0]}) != 0:
@@ -88,7 +88,7 @@ def generate_loot(bot, name, lvl, type) -> str:
         return f"{loot['name']} {loot['preset']}"
 
     loot = item.copy()
-    loot['_id'] = uuid.uuid4()
+    loot['_id'] = str(uuid.uuid4())
     loot['name'] = name
     loot['lvl'] = lvl
     loot['type'] = type
@@ -97,5 +97,5 @@ def generate_loot(bot, name, lvl, type) -> str:
 
     loot['give_stats'] = add_stats(main_stat(lvl, type, rarity), preset[1])
 
-    bot.info_db.insert_one(loot)
-    return f"{loot['name']} {loot['preset']}"
+    bot.items_db.insert_one(loot)
+    return [f"{loot['name']} {loot['preset']}", loot['_id']]
