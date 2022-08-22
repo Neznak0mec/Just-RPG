@@ -1,9 +1,8 @@
 import random
-
 import discord
 
 
-class beings:
+class Entity:
     def __init__(self):
         self.hp = 0
         self.damage = 0
@@ -63,7 +62,7 @@ class beings:
         return "[" + "-" * 10 + "]" + f" {self.defence:.2f}/{self.max_def}"
 
 
-class Enemy(beings):
+class Enemy(Entity):
     def __init__(self, name, lvl, url):
         super().__init__()
         self.lvl = lvl + random.randint(1, 3)
@@ -83,7 +82,7 @@ class Enemy(beings):
         self.max_hp = self.hp
 
 
-class Player(beings):
+class Player(Entity):
     def __init__(self, pl : discord.User, bot):
         super().__init__()
         user = bot.users_db.find_one({"_id": pl.id})

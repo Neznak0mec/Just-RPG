@@ -1,12 +1,9 @@
 import random
-
 import discord
 from discord import app_commands
 from discord.ext import commands
-
 from cogs.profiler import lvl_up
 from modules import checker
-
 from modules.classes import Player, Enemy
 from modules.generator import generate_loot
 
@@ -370,5 +367,4 @@ class Dungeon(commands.Cog):
 
 
 async def setup(client):
-    # pass
     await client.add_cog(Dungeon(client))
