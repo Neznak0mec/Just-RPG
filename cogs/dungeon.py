@@ -1,4 +1,6 @@
 import random
+import uuid
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -304,25 +306,32 @@ class Dun(discord.ui.View):
         return
 
 
-class Select_dungeon(discord.ui.View):
+class Select_dungeon(discord.ui.Select):
     def __init__(self, bot, author):
-        super().__init__()
+
         self.bot = bot
         self.author = author
         self.dungeon_list = []
         self.interaction = None
+        self.option = []
+
         for dungeon in self.bot.info_db.find_one({"_id": "locations"})['dungeons']:
             self.dungeon_list.append(dungeon)
 
         for i in self.dungeon_list:
-            self.select.add_option(label=i['name'],
-                                   description=i['description'])
+            self.option.append(discord.SelectOption(label=i['name'],
+                                                    description=i['description']))
 
-    @discord.ui.select(options=[], row=0, placeholder="Выберите противника")
-    async def select(self, interaction: discord.Interaction, options):
-        selected = interaction.data["values"][0]
+        super().__init__(placeholder="Выберите противника", options=self.option, min_values=1, max_values=1)
+
+    async def callback(self, interaction: discord.Interaction):
+        if interaction.user.id != self.author.id:
+            await interaction.response.send_message(embed=checker.err_embed(f"Это не вы собираетесь в путешествие"),
+                                                    ephemeral=True)
+            return
+
         for i in self.dungeon_list:
-            if i["name"] == selected:
+            if i["name"] == self.values[0]:
                 selected = i
                 break
         mobs_amount = random.randint(2, 4)
@@ -336,23 +345,6 @@ class Select_dungeon(discord.ui.View):
         view = Dun(self.bot, interaction.user, interaction, enemies, player, selected['drop'])
         await interaction.response.edit_message(embed=game_emb(player, enemies[0], None), view=view)
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if self.interaction is None:
-            self.interaction = interaction
-
-        if interaction.user.id != self.author.id:
-            await interaction.response.send_message(embed=checker.err_embed(f"Это вы не вы собираетесь в данж"),
-                                                    ephemeral=True)
-        return interaction.user.id == self.author.id
-
-    async def on_timeout(self) -> None:
-        self.select.disabled = True
-
-        try:
-            await self.interaction.message.edit(view=self)
-        except:
-            pass
-
 
 class Dungeon(commands.Cog):
     def __init__(self, bot):
@@ -361,7 +353,8 @@ class Dungeon(commands.Cog):
 
     @app_commands.command(name="dungeon")
     async def dungeon(self, interaction: discord.Interaction):
-        view = Select_dungeon(self.bot, interaction.user)
+        view = discord.ui.View().add_item(Select_dungeon(self.bot, interaction.user))
+
         emb = discord.Embed(title="Выбери данж")
         await interaction.response.send_message(embed=emb, view=view)
 
