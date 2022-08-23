@@ -202,14 +202,10 @@ class Devel(commands.Cog):
             await interaction.response.send_message("предмета не существует")
             return
 
-        post = {
-            item_id: chance
-        }
-
         self.bot.info_db.update_one({"_id": "locations"},
                                     {"$set": {"loks." + str(counter) + ".drop." + item_id: chance}})
 
-        await interaction.response.send_message(f"{item_id} добвлен на локацию с шансом 1\{chance}")
+        await interaction.response.send_message(f"{item_id} добвлен на локацию с шансом 1:{chance}")
 
     @app_commands.command(name="add_image")
     async def add_image(self, interaction: discord.Interaction, id: str, image: str):
@@ -296,7 +292,7 @@ class Devel(commands.Cog):
 
     @app_commands.command(name="upd")
     async def upd(self, interaction: discord.Interaction):
-        # change key from heal to hp
+
         self.bot.users_db.update_many({}, {"$rename": {"heal": "hp"}})
         self.bot.info_db.update_many({"type": "helet"}, {"$rename": {"helet": "helmet"}})
         self.bot.items_db.update_many({}, {"$set": {"generated": True}})
