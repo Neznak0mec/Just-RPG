@@ -37,13 +37,14 @@ main_stats = {
 
 
 def choose_rarity() -> str:
-    if random.randint(1, 10000) == 1:
+    a = random.randint(1, 10000)
+    if a == 1:
         return 'legendary'
-    elif random.randint(1, 1000) == 1:
+    elif 1 < a <= 10:
         return 'epic'
-    elif random.randint(1, 100) == 1:
+    elif 10 < a <= 100:
         return 'rare'
-    elif random.randint(1, 10) == 1:
+    elif 100 < a <= 1000:
         return 'uncommon'
     else:
         return 'common'
@@ -96,6 +97,5 @@ def generate_loot(bot, name, lvl, type) -> [str, str]:
     loot['preset'] = preset[0]
 
     loot['give_stats'] = add_stats(main_stat(lvl, type, rarity), preset[1])
-
     bot.items_db.insert_one(loot)
     return [f"{loot['name']} {loot['preset']}", loot['_id']]
