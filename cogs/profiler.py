@@ -645,12 +645,16 @@ class Profiler(commands.Cog):
         emb.add_field(name="Тип", value=item['type'])
         emb.add_field(name="Уровень", value=item['lvl'])
         emb.add_field(name="Редкость", value=item['rarity'])
-        emb.add_field(name="Описание", value=item['description'])
+        if not item['generated']:
+            emb.add_field(name="Описание", value=item['description'])
+        else:
+            emb.add_field(name="Прессет", value=item['preset'])
         stats = stats_get(item['give_stats'])
         if stats == "":
             stats = "-"
         emb.add_field(name="Статы", value=stats)
         emb.add_field(name="uid", value=item['_id'])
+
         if 'image' in item:
             emb.set_thumbnail(url=item['image'])
 
