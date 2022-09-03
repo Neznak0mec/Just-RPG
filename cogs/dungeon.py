@@ -56,10 +56,15 @@ def game_win(mob: Enemy, log, player: Player, author, bot, drop):
 
     log += f"Вы победили\nВ качестве награды вы получили exp - {exp} и монет - {coins}\n"
 
-    droped = random.choice(list(drop.keys()))
-    loot = generate_loot(bot, drop[droped], mob.lvl, droped)
-    log += f"Вы получили {loot[0]}"
-    bot.users_db.update_one({"_id": author.id}, {"$push": {"inventory": loot[1]}})
+
+    inventory = bot.users_db.find_one({"_id": author.id})['inventory']
+    if inventory.__len__() < 30:
+        droped = random.choice(list(drop.keys()))
+        loot = generate_loot(bot, drop[droped], mob.lvl, droped)
+        log += f"Вы получили {loot[0]}"
+        bot.users_db.update_one({"_id": author.id}, {"$push": {"inventory": loot[1]}})
+    else:
+        log += f"Инвентарь полон, вам некуда сложить найделный лут"
 
     emb = discord.Embed(title=f"Победа", description="\u200b")
     if lvl_up(bot, author):
