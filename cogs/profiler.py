@@ -218,7 +218,7 @@ class Inventory(discord.ui.View):
 
         return True
 
-    @discord.ui.button(label="Профиль", style=discord.ButtonStyle.blurple, row=0,
+    @discord.ui.button(label="Профиль", style=discord.ButtonStyle.blurple, row=1,
                        emoji='<:profile:1004832756364234762>', disabled=True)
     async def left(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.interaction = interaction
@@ -271,7 +271,7 @@ class Inventory(discord.ui.View):
 
         await interaction.response.edit_message(embed=emb, view=self)
 
-    @discord.ui.button(label="Экипировка", style=discord.ButtonStyle.blurple, row=0,
+    @discord.ui.button(label="Экипировка", style=discord.ButtonStyle.blurple, row=1,
                        emoji='<:equipment:1004832754661343232>')
     async def central(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.interaction = interaction
@@ -321,7 +321,7 @@ class Inventory(discord.ui.View):
 
         await interaction.response.edit_message(embed=emb, view=self)
 
-    @discord.ui.button(label="Инвентарь", style=discord.ButtonStyle.blurple, row=0,
+    @discord.ui.button(label="Инвентарь", style=discord.ButtonStyle.blurple, row=1,
                        emoji='<:inventory:1004832752878768128>')
     async def right(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.interaction = interaction
@@ -356,10 +356,11 @@ class Inventory(discord.ui.View):
 
         await interaction.response.edit_message(embed=emb, view=self)
 
-    @discord.ui.button(label="Прокачать навыки", style=discord.ButtonStyle.blurple, row=1,
+    @discord.ui.button(label="Прокачать навыки", style=discord.ButtonStyle.blurple, row=2,
                        emoji='<:lvl_up:1006270950989365318>')
     async def lvl(self, interaction: discord.Interaction, button: discord.ui.Button):
-        emb = discord.Embed(title="Прокачка навыков", description="Уровень навыка не может привышать уровень персонажа\n"
+        emb = discord.Embed(title="Прокачка навыков",
+                            description="Уровень навыка не может привышать уровень персонажа\n"
                                         "<:health:997889169567260714> - увеличивается только за счёт экипировки\n"
                                         "<:strength:997889205684420718> - наносимый урон\n"
                                         "<:armor:997889166673186987> - принимают на себя весь урон с его частичным уменьшением\n"
@@ -368,6 +369,7 @@ class Inventory(discord.ui.View):
                                         "<:crit:997889163552628757> - вероятность критического удара")
         await interaction.response.edit_message(embed=emb, view=Up_Skills(interaction.user, self.bot))
 
+    @discord.ui.button(label="<", style=discord.ButtonStyle.blurple, row=0)
     async def on_timeout(self) -> None:
         self.left.disabled = True
         self.right.disabled = True
@@ -521,8 +523,8 @@ class Profiler(commands.Cog):
             f"Вы сняли `{item['name']}` и положили в инвентарь"))
 
     @app_commands.command(name="sell", description="Продать вещь за 20% от цены")
-    @app_commands.describe(id="id предмета в вашем инвентаре")
-    async def sell(self, interaction: discord.Interaction, id: int):
+    @app_commands.describe(id="id предмета в вашем инвентаре", amount="Количичесво")
+    async def sell(self, interaction: discord.Interaction, id: int, amount: int = 1):
         await checker.check(self.bot, interaction)
         us = self.bot.users_db.find_one({"_id": interaction.user.id})
         items = {}
@@ -541,17 +543,20 @@ class Profiler(commands.Cog):
         for i in items.keys():
             if counter == id:
                 item = self.bot.items_db.find_one({"_id": i})
-                us['inventory'].remove(i)
+                count = 0
+                while i in us['inventory'] and count < amount:
+                    us['inventory'].remove(i)
+                    count += 1
 
                 self.bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": us['inventory']}})
-                self.bot.users_db.update_one({"_id": interaction.user.id}, {"$inc": {"cash": int(item['price'] * 0.2)}})
+                self.bot.users_db.update_one({"_id": interaction.user.id}, {"$inc": {"cash": int(item['price'] * 0.2 * count)}})
                 await interaction.response.send_message(embed=checker.emp_embed(
-                    f"Вы продали {item['name']} за {int(item['price'] * 0.2)}"))
+                    f"Вы продали {item['name']} в количестве{count}шт. за {int(item['price'] * 0.2 * count)}"))
 
             counter += 1
 
     @app_commands.command(name="work", description="Отправится в городской патруль")
-    @app_commands.checks.cooldown(1, 180, key=lambda i: i.user.id)
+    # @app_commands.checks.cooldown(1, 180, key=lambda i: i.user.id)
     async def work(self, interaction: discord.Interaction):
         await checker.check(self.bot, interaction)
         us = self.bot.users_db.find_one({"_id": interaction.user.id})
@@ -574,7 +579,7 @@ class Profiler(commands.Cog):
                                   "-bd5e-52d3e9d3ffdc.png")
         elif rand == 2:
             emb = discord.Embed(title=f'**Харчевник:**',
-                                description=f'*Вы помогли работником харчервина.\n'
+                                description=f'*Вы помогли работникам харчевни.\n'
                                             f'Награда: {exp} exp и {cash} монет*')
             emb.set_thumbnail(url="https://cdn.discordapp.com/attachments/939111963559088200/1006657127630245949"
                                   "/Neznakomec_view_of_the_bar_in_a_medieval_bar_815c4046-e52d-4f73-9328-"
