@@ -1,19 +1,19 @@
 {"works" : [
   {
     "title": "**Городской патруль:**",
-   "description": "*Вы помогли городской страже, отстояв за них на посту некоторое время.\nНаграда: {exp} exp и {cash} монет*",
+   "description": "*Вы помогли городской страже, отстояв за них на посту некоторое время.\nНаграда: {} exp и {} монет*",
    "url": "Neznakomec_night_medieval_city_patrol_with_two_other_guards_fro_ff05944e-dd3d-4e2e-bd5e-52d3e9d3ffdc.png"
   },
 
   {
     "title": "**Харчевник:**",
-    "description": "*Вы помогли работникам харчевни.\nНаграда: {exp} exp и {cash} монет*",
+    "description": "*Вы помогли работникам харчевни.\nНаграда: {} exp и {} монет*",
     "url": "https://cdn.discordapp.com/attachments/939111963559088200/1006657127630245949/Neznakomec_view_of_the_bar_in_a_medieval_bar_815c4046-e52d-4f73-9328-b1e04386c28d.png"
   },
 
   {
     "title": "**Морской порт:**",
-    "description": "*Вы помогли разгрузить несколько грузовых кораблей.\nНаграда: {exp} exp и {cash} монет*",
+    "description": "*Вы помогли разгрузить несколько грузовых кораблей.\nНаграда: {} exp и {} монет*",
     "url": "https://cdn.discordapp.com/attachments/939111963559088200/1006967677434216580/Neznakomec_industrial_area_of_a_medieval_seaport_where_people_u_877e94cf-5f6f-4961-b79e-18d8c5e2ff00.png"
   }
 ]
