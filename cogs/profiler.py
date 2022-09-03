@@ -3,8 +3,11 @@ import random
 import discord
 from discord import app_commands
 from discord.ext import commands
+import json
 
 from modules import checker
+
+works = None
 
 
 def lvl_up(bot, user):
@@ -549,7 +552,8 @@ class Profiler(commands.Cog):
                     count += 1
 
                 self.bot.users_db.update_one({"_id": interaction.user.id}, {"$set": {"inventory": us['inventory']}})
-                self.bot.users_db.update_one({"_id": interaction.user.id}, {"$inc": {"cash": int(item['price'] * 0.2 * count)}})
+                self.bot.users_db.update_one({"_id": interaction.user.id},
+                                             {"$inc": {"cash": int(item['price'] * 0.2 * count)}})
                 await interaction.response.send_message(embed=checker.emp_embed(
                     f"Вы продали {item['name']} в количестве{count}шт. за {int(item['price'] * 0.2 * count)}"))
 
@@ -558,6 +562,7 @@ class Profiler(commands.Cog):
     @app_commands.command(name="work", description="Отправится в городской патруль")
     # @app_commands.checks.cooldown(1, 180, key=lambda i: i.user.id)
     async def work(self, interaction: discord.Interaction):
+        global works
         await checker.check(self.bot, interaction)
         us = self.bot.users_db.find_one({"_id": interaction.user.id})
 
@@ -567,31 +572,17 @@ class Profiler(commands.Cog):
         self.bot.users_db.update_many({"_id": interaction.user.id},
                                       {"$inc": {"exp": exp, "cash": cash}})
 
-        rand = random.randint(1, 3)
+        if works is None:
+            data = None
+            with open('json\works.json', 'r') as f:
+                data = json.load(f)
+            works = data['works']
 
-        if rand == 1:
+        rand = random.choice(works)
 
-            emb = discord.Embed(title=f'**Городской патруль:**',
-                                description=f'*Вы помогли городской страже, отстояв за них на посту некоторое время.\n'
-                                            f'Награда: {exp} exp и {cash} монет*')
-            emb.set_thumbnail(url="https://cdn.discordapp.com/attachments/939111963559088200/1006659882470080552/"
-                                  "Neznakomec_night_medieval_city_patrol_with_two_other_guards_fro_ff05944e-dd3d-4e2e"
-                                  "-bd5e-52d3e9d3ffdc.png")
-        elif rand == 2:
-            emb = discord.Embed(title=f'**Харчевник:**',
-                                description=f'*Вы помогли работникам харчевни.\n'
-                                            f'Награда: {exp} exp и {cash} монет*')
-            emb.set_thumbnail(url="https://cdn.discordapp.com/attachments/939111963559088200/1006657127630245949"
-                                  "/Neznakomec_view_of_the_bar_in_a_medieval_bar_815c4046-e52d-4f73-9328-"
-                                  "b1e04386c28d.png")
-
-        else:
-            emb = discord.Embed(title=f'**Морской порт:**',
-                                description=f'*Вы помогли разгрузить несколько грузовых кораблей.\n'
-                                            f'Награда: {exp} exp и {cash} монет*')
-            emb.set_thumbnail(url="https://cdn.discordapp.com/attachments/939111963559088200/1006967677434216580"
-                                  "/Neznakomec_industrial_area_of_a_medieval_seaport_where_people_u_877e94cf"
-                                  "-5f6f-4961-b79e-18d8c5e2ff00.png")
+        emb = discord.Embed(title=rand['title'],
+                            description=rand['description'])
+        emb.set_thumbnail(url=rand['url'])
 
         lvl_up(self.bot, interaction.user)
 
