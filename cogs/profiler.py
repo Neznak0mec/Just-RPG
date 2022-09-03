@@ -574,14 +574,15 @@ class Profiler(commands.Cog):
 
         if works is None:
             data = None
-            with open('json\works.json', 'r') as f:
+            with open('json\works.json', 'r', encoding='utf-8') as f:
                 data = json.load(f)
             works = data['works']
+
 
         rand = random.choice(works)
 
         emb = discord.Embed(title=rand['title'],
-                            description=rand['description'])
+                            description=rand['description'].format(exp,cash))
         emb.set_thumbnail(url=rand['url'])
 
         lvl_up(self.bot, interaction.user)
