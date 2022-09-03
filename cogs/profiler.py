@@ -9,6 +9,11 @@ from modules import checker
 
 works = None
 
+rarities = {'common' : "обычный",
+            'uncommon' : "необыйчный",
+            'rare': "редкий",
+            'epic': "эпический",
+           'legendary': "легендарый"}
 
 def lvl_up(bot, user):
     us = bot.users_db.find_one({"_id": user.id})
@@ -349,7 +354,9 @@ class Inventory(discord.ui.View):
 
         for i in items.keys():
             item = self.bot.items_db.find_one({"_id": i})
-            desc = item['description'] or "----"
+            desc = item['description'] or None
+            if desc is None:
+                desc = rarities[item['rarity']] + " | " + item['preset']
             emb.add_field(name=f"id: {counter}|{item['lvl']}lvl - {item['name']} x {items[i]}шт",
                           value=desc,
                           inline=False)
@@ -371,18 +378,6 @@ class Inventory(discord.ui.View):
                                         "<:luck:997889165221957642> - увеличивает получаемый опыт и монеты\n"
                                         "<:crit:997889163552628757> - вероятность критического удара")
         await interaction.response.edit_message(embed=emb, view=Up_Skills(interaction.user, self.bot))
-
-    @discord.ui.button(label="<", style=discord.ButtonStyle.blurple, row=0)
-    async def on_timeout(self) -> None:
-        self.left.disabled = True
-        self.right.disabled = True
-        self.central.disabled = True
-        self.lvl.disabled = True
-
-        if self.interaction is not None:
-            await self.interaction.message.edit(view=self)
-
-        await self.stop()
 
     async def stop(self) -> None:
         return
