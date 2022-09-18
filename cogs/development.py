@@ -294,8 +294,8 @@ class Devel(commands.Cog):
     async def upd(self, interaction: discord.Interaction):
 
         self.bot.users_db.update_many({}, {"$rename": {"heal": "hp"}})
-        self.bot.info_db.update_many({"type": "helet"}, {"$rename": {"helet": "helmet"}})
-        self.bot.items_db.update_many({}, {"$set": {"generated": True}})
+        self.bot.items_db.update_many({"type": "helem"}, {"$set": {"type": "helmet"}})
+        self.bot.items_db.update_many({}, {"$set": {"generated": False}})
         users = self.bot.users_db.find()
         for i in users:
             stats = {
