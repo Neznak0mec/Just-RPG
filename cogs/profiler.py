@@ -407,7 +407,7 @@ class Inventory(discord.ui.View):
         await self.interact(5, interaction)
         pass
 
-    @discord.ui.button(label="back", style=discord.ButtonStyle.red, row=3,
+    @discord.ui.button(label="🔙 К профилю", style=discord.ButtonStyle.grey, row=3,
                        disabled=False)
     async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.edit_message(embed=create_profile_emb(self.bot, self.member),
