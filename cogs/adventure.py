@@ -49,7 +49,7 @@ class Adventure(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # @app_commands.checks.cooldown(1, 600, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 300, key=lambda i: i.user.id)
     @app_commands.command(name="adventure", description="Отправится в небольшой поход")
     async def dungeon(self, interaction: discord.Interaction):
         await checker.check(self.bot, interaction)

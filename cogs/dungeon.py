@@ -357,6 +357,7 @@ class Dungeon(commands.Cog):
         super(Dungeon, self).__init__()
 
     @app_commands.command(name="dungeon")
+    @app_commands.checks.cooldown(1, 600, key=lambda i: i.user.id)
     async def dungeon(self, interaction: discord.Interaction):
         view = discord.ui.View().add_item(Select_dungeon(self.bot, interaction.user))
 
